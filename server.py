@@ -263,7 +263,22 @@ class DBCQueryMCP:
                 request = json.loads(line)
 
                 # Handle different request types
-                if request.get("method") == "tools/list":
+                if request.get("method") == "initialize":
+                    response = {
+                        "jsonrpc": "2.0",
+                        "id": request.get("id"),
+                        "result": {
+                            "protocolVersion": "2024-11-05",
+                            "capabilities": {
+                                "tools": {}
+                            },
+                            "serverInfo": {
+                                "name": "dbc-query",
+                                "version": "1.0.0"
+                            }
+                        }
+                    }
+                elif request.get("method") == "tools/list":
                     response = {
                         "jsonrpc": "2.0",
                         "id": request.get("id"),
