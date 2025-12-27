@@ -220,6 +220,12 @@ class DBCQueryMCP:
             record = reader.get_record_by_id(args["id"])
             if record is None:
                 return {"result": None, "message": f"No record found with ID {args['id']}"}
+
+            # Apply column selection if specified
+            columns = args.get("columns")
+            if columns:
+                record = {idx: record.get(idx) for idx in columns}
+
             return {"result": record}
 
         # Get record by row index
@@ -227,6 +233,12 @@ class DBCQueryMCP:
             record = reader.get_record(args["row_index"])
             if record is None:
                 return {"result": None, "message": f"No record found at row index {args['row_index']}"}
+
+            # Apply column selection if specified
+            columns = args.get("columns")
+            if columns:
+                record = {idx: record.get(idx) for idx in columns}
+
             return {"result": record}
 
         # Query with filter
