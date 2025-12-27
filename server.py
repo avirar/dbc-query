@@ -34,8 +34,31 @@ class DBCQueryMCP:
         self.format_parser = FormatParser(self.format_file)
         self.format_parser.parse()
 
+        # Load field name mappings
+        self.field_mappings = self._load_field_mappings()
+
         # Cache for loaded DBCs
         self.dbc_cache: Dict[str, WDBCReader] = {}
+
+    def _load_field_mappings(self) -> Dict[str, Dict[str, Dict[str, str]]]:
+        """
+        Load field name mappings from field_mappings.json.
+
+        Returns:
+            Dictionary mapping DBC names to field info
+        """
+        mapping_file = Path(__file__).parent / "field_mappings.json"
+
+        if not mapping_file.exists():
+            print(f"Warning: field_mappings.json not found at {mapping_file}", file=sys.stderr)
+            return {}
+
+        try:
+            with open(mapping_file, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load field mappings: {e}", file=sys.stderr)
+            return {}
 
     def _load_dbc(self, dbc_name: str) -> WDBCReader:
         """
@@ -130,6 +153,20 @@ class DBCQueryMCP:
                         }
                     }
                 }
+            },
+            {
+                "name": "describe_fields",
+                "description": "Get field names, types, and descriptions for a DBC file. Returns field mappings extracted from AzerothCore source code, making it easy to understand what each field index represents.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "dbc_name": {
+                            "type": "string",
+                            "description": "Name of the DBC file (without .dbc extension). Examples: 'Spell', 'SkillLineAbility', 'Item'"
+                        }
+                    },
+                    "required": ["dbc_name"]
+                }
             }
         ]
 
@@ -149,6 +186,8 @@ class DBCQueryMCP:
                 return self._query_dbc(arguments)
             elif name == "list_dbcs":
                 return self._list_dbcs(arguments)
+            elif name == "describe_fields":
+                return self._describe_fields(arguments)
             else:
                 return {
                     "error": f"Unknown tool: {name}",
@@ -250,6 +289,68 @@ class DBCQueryMCP:
         return {
             "result": result,
             "count": len(result)
+        }
+
+    def _describe_fields(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Describe fields for a DBC file.
+
+        Returns field names, types, and indices extracted from AzerothCore source.
+        """
+        dbc_name = args.get("dbc_name")
+        if not dbc_name:
+            return {"error": "dbc_name is required", "isError": True}
+
+        # Get format string to know total field count
+        format_string = self.format_parser.get_format(dbc_name)
+        if not format_string:
+            return {"error": f"No format found for DBC: {dbc_name}", "isError": True}
+
+        # Get field mappings for this DBC
+        field_info = self.field_mappings.get(dbc_name, {})
+
+        # Build comprehensive field list
+        fields = []
+        for idx in range(len(format_string)):
+            # Get format character for type info
+            format_char = format_string[idx] if idx < len(format_string) else 'x'
+
+            # Map format char to human-readable type
+            type_map = {
+                'i': 'uint32', 'n': 'uint32', 'd': 'uint32', 'l': 'uint32',
+                'f': 'float',
+                's': 'string',
+                'b': 'uint8',
+                'x': 'unused', 'X': 'unused'
+            }
+            field_type = type_map.get(format_char, 'unknown')
+
+            # Get field name from mappings (if available)
+            idx_str = str(idx)
+            if idx_str in field_info:
+                field_name = field_info[idx_str]["name"]
+                # Prefer type from struct definition if available
+                struct_type = field_info[idx_str].get("type", field_type)
+            else:
+                field_name = f"Field{idx}"
+                struct_type = field_type
+
+            fields.append({
+                "index": idx,
+                "name": field_name,
+                "type": struct_type,
+                "format_char": format_char,
+                "has_mapping": idx_str in field_info
+            })
+
+        return {
+            "result": {
+                "dbc": dbc_name,
+                "field_count": len(fields),
+                "mapped_fields": len(field_info),
+                "unmapped_fields": len(fields) - len(field_info),
+                "fields": fields
+            }
         }
 
     def run(self):

@@ -17,6 +17,7 @@ This tool allows AI assistants to query WoW DBC files without requiring SQL impo
 
 - **Direct WDBC file parsing** (WoW 3.3.5 / WotLK format)
 - **Automatic format detection** from AzerothCore DBCfmt.h
+- **Field name mappings** extracted from DBCStructure.h (85 DBCs, 982 fields)
 - **Multiple query modes**: by ID, row index, or field filters
 - **Column selection** for optimized results
 - **DBC caching** for performance
@@ -42,7 +43,14 @@ This tool allows AI assistants to query WoW DBC files without requiring SQL impo
    python3 --version  # Should be 3.7 or higher
    ```
 
-3. **Test the standalone tools:**
+3. **Generate field mappings (optional - already included):**
+   ```bash
+   # Field mappings are pre-generated, but you can regenerate them:
+   python3 struct_parser.py
+   # This creates field_mappings.json from DBCStructure.h
+   ```
+
+4. **Test the standalone tools:**
    ```bash
    # Test format parser
    python3 format_parser.py
@@ -54,7 +62,7 @@ This tool allows AI assistants to query WoW DBC files without requiring SQL impo
    echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | python3 server.py
    ```
 
-4. **Configure Claude Code MCP server:**
+5. **Configure Claude Code MCP server:**
 
    Add to your `~/.claude.json` in the `mcpServers` section:
    ```json
@@ -77,7 +85,7 @@ This tool allows AI assistants to query WoW DBC files without requiring SQL impo
    - `DBC_PATH`: Location of your .dbc files
    - `DBC_FORMAT_FILE`: Path to DBCfmt.h in your AzerothCore source
 
-5. **Restart Claude Code** to load the MCP server
+6. **Restart Claude Code** to load the MCP server
 
 ## Usage
 
@@ -154,6 +162,60 @@ mcp__dbc_query__list_dbcs(search="Spell")
 mcp__dbc_query__list_dbcs(search="Talent")
 ```
 
+#### 3. Describe DBC Fields (`describe_fields`)
+
+**Get field names and types for a DBC:**
+```python
+# Get all field information for Spell.dbc
+mcp__dbc_query__describe_fields(dbc_name="Spell")
+
+# Returns:
+# {
+#   "dbc": "Spell",
+#   "field_count": 234,
+#   "mapped_fields": 184,    # Fields with known names
+#   "unmapped_fields": 50,   # Fields named "FieldN"
+#   "fields": [
+#     {"index": 0, "name": "Id", "type": "uint32", "format_char": "n", "has_mapping": true},
+#     {"index": 136, "name": "SpellName[0]", "type": "string_array", "format_char": "s", "has_mapping": true},
+#     {"index": 153, "name": "Rank[0]", "type": "string_array", "format_char": "s", "has_mapping": true},
+#     ...
+#   ]
+# }
+```
+
+**Example usage - Find spell name field:**
+```python
+# Describe fields to find the name field
+fields = mcp__dbc_query__describe_fields(dbc_name="Spell")
+
+# Look for "Name" in field names
+name_fields = [f for f in fields["result"]["fields"] if "Name" in f["name"]]
+# Returns: SpellName[0] at index 136
+
+# Now query just the fields you need
+spell = mcp__dbc_query__query_dbc(
+    dbc_name="Spell",
+    id=133,
+    columns=[0, 136, 153]  # ID, Name, Rank
+)
+```
+
+**Benefits:**
+- 🔍 **Discover field meanings** without consulting external documentation
+- 📊 **See field types** (uint32, float, string, etc.)
+- ✅ **Know which fields are mapped** vs unnamed
+- 🎯 **Optimize queries** by selecting only needed columns
+
+**Field name coverage:**
+- **Spell.dbc**: 184/234 fields (78.6%)
+- **SkillLineAbility.dbc**: 10/14 fields (71.4%)
+- **Item.dbc**: Varies by DBC
+- **Total**: 85 DBCs with field mappings
+
+**Unmapped fields:**
+Fields without mappings are shown as `FieldN` (e.g., `Field42`). These are typically unused fields or fields without comments in the AzerothCore source code.
+
 ## Architecture
 
 ### Core Modules
@@ -173,6 +235,40 @@ mcp__dbc_query__list_dbcs(search="Talent")
   - Extracts format strings from C++ header
   - DBC name mapping (e.g., Spell → SpellEntry)
   - Field count and record size calculation
+
+- **`struct_parser.py`** - DBCStructure.h field name extractor
+  - Parses C++ struct definitions to extract field names and types
+  - Handles array fields spanning multiple indices (e.g., `SpellName[0-15]`)
+  - Generates `field_mappings.json` with 85 DBCs, 982 fields
+  - Run manually: `python3 struct_parser.py` to regenerate mappings
+
+### Field Name Extraction
+
+Field names are extracted from `DBCStructure.h` by parsing C++ struct comments:
+
+```cpp
+// From DBCStructure.h:
+struct SpellEntry {
+    uint32 Id;                                    // 0
+    uint32 Category;                              // 1
+    std::array<char const*, 16> SpellName;        // 136-151
+    std::array<char const*, 16> Rank;             // 153-168
+    ...
+};
+```
+
+The `struct_parser.py` tool extracts these definitions and creates a JSON mapping:
+```json
+{
+  "Spell": {
+    "0": {"name": "Id", "type": "uint32"},
+    "136": {"name": "SpellName[0]", "type": "string_array"},
+    "153": {"name": "Rank[0]", "type": "string_array"}
+  }
+}
+```
+
+This mapping is loaded at runtime and used by the `describe_fields` tool.
 
 ### WDBC File Format
 
