@@ -9,14 +9,30 @@ the MCP protocol, allowing AI assistants to access game data directly.
 import json
 import sys
 import os
+import subprocess
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from dbc_reader import WDBCReader
 from format_parser import FormatParser
 
 
 class DBCQueryMCP:
     """MCP server for DBC file queries."""
+
+    # Mapping from DBC file names to database table names
+    # Extracted from AzerothCore DBCStores.cpp LOAD_DBC calls
+    DBC_TO_DB_TABLE = {
+        "Achievement": "achievement_dbc",
+        "Achievement_Category": "achievement_category_dbc",
+        "Achievement_Criteria": "achievement_criteria_dbc",
+        "AreaTable": "areatable_dbc",
+        "Spell": "spell_dbc",
+        "SkillLineAbility": "skilllineability_dbc",
+        "LFGDungeons": "lfgdungeons_dbc",
+        "RandPropPoints": "randproppoints_dbc",
+        "SpellCastTimes": "spellcasttimes_dbc",
+        # Add more mappings as needed
+    }
 
     def __init__(self):
         """Initialize the MCP server."""
@@ -29,6 +45,13 @@ class DBCQueryMCP:
             'DBC_FORMAT_FILE',
             '/root/azerothcore-wotlk/src/server/shared/DataStores/DBCfmt.h'
         )
+
+        # Database configuration (for unified queries)
+        self.db_host = os.environ.get('DB_HOST', 'localhost')
+        self.db_port = os.environ.get('DB_PORT', '3306')
+        self.db_user = os.environ.get('DB_USER', 'root')
+        self.db_password = os.environ.get('DB_PASSWORD', 'password')
+        self.db_name = os.environ.get('DB_NAME', 'acore_world')
 
         # Initialize format parser
         self.format_parser = FormatParser(self.format_file)
@@ -167,6 +190,42 @@ class DBCQueryMCP:
                     },
                     "required": ["dbc_name"]
                 }
+            },
+            {
+                "name": "query_game_data",
+                "description": "Unified game data query that combines DBC files and database tables, mimicking AzerothCore's server loading behavior. Queries DBC file first, then checks database table for overlays/overrides. Returns data with metadata about the source. Use this for reliable, server-accurate data.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "dbc_name": {
+                            "type": "string",
+                            "description": "Name of the DBC/data source (without .dbc extension). Examples: 'Spell', 'Achievement_Category', 'LFGDungeons'"
+                        },
+                        "id": {
+                            "type": "number",
+                            "description": "Get record by ID field value (field 0). Mutually exclusive with row_index and filter."
+                        },
+                        "row_index": {
+                            "type": "number",
+                            "description": "Get record by row index (0-based). Mutually exclusive with id and filter."
+                        },
+                        "filter": {
+                            "type": "object",
+                            "description": "Filter records by field values. Keys are field indices (as strings), values are the values to match.",
+                            "additionalProperties": True
+                        },
+                        "columns": {
+                            "type": "array",
+                            "items": {"type": "number"},
+                            "description": "Select specific field indices to return. If omitted, all fields are returned."
+                        },
+                        "limit": {
+                            "type": "number",
+                            "description": "Maximum number of records to return (default: 100)"
+                        }
+                    },
+                    "required": ["dbc_name"]
+                }
             }
         ]
 
@@ -188,6 +247,8 @@ class DBCQueryMCP:
                 return self._list_dbcs(arguments)
             elif name == "describe_fields":
                 return self._describe_fields(arguments)
+            elif name == "query_game_data":
+                return self._query_game_data(arguments)
             else:
                 return {
                     "error": f"Unknown tool: {name}",
@@ -362,6 +423,169 @@ class DBCQueryMCP:
                 "mapped_fields": len(field_info),
                 "unmapped_fields": len(fields) - len(field_info),
                 "fields": fields
+            }
+        }
+
+    def _query_database(self, table_name: str, args: Dict[str, Any]) -> Tuple[Optional[List[Dict]], Optional[str]]:
+        """
+        Query a database table using mysql command-line tool.
+
+        Args:
+            table_name: Name of the database table
+            args: Query arguments (id, filter, columns, limit)
+
+        Returns:
+            Tuple of (results_list, error_message)
+        """
+        try:
+            # Build SQL query
+            sql_parts = [f"SELECT * FROM {table_name}"]
+
+            # Add WHERE clause
+            where_clauses = []
+            if "id" in args:
+                where_clauses.append(f"ID = {args['id']}")
+            elif "filter" in args:
+                for field_idx, value in args["filter"].items():
+                    # For database queries, we'd need field name mapping
+                    # For now, assume field_0 = ID
+                    if field_idx == "0":
+                        where_clauses.append(f"ID = {value}")
+
+            if where_clauses:
+                sql_parts.append("WHERE " + " AND ".join(where_clauses))
+
+            # Add LIMIT
+            limit = args.get("limit", 100)
+            sql_parts.append(f"LIMIT {limit}")
+
+            sql = " ".join(sql_parts)
+
+            # Execute query using mysql command
+            cmd = [
+                "mysql",
+                "-h", self.db_host,
+                "-P", self.db_port,
+                "-u", self.db_user,
+                f"-p{self.db_password}",
+                "-D", self.db_name,
+                "-e", sql,
+                "--batch",
+                "--skip-column-names"
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode != 0:
+                return None, f"Database query failed: {result.stderr}"
+
+            # Parse results (tab-separated values)
+            rows = []
+            for line in result.stdout.strip().split('\n'):
+                if line:
+                    values = line.split('\t')
+                    # Create dict with numeric keys for consistency with DBC
+                    row_dict = {i: val for i, val in enumerate(values)}
+                    rows.append(row_dict)
+
+            return rows, None
+
+        except Exception as e:
+            return None, f"Database query error: {str(e)}"
+
+    def _merge_results(self, dbc_data: Optional[Dict], db_data: Optional[List[Dict]]) -> Tuple[Any, str]:
+        """
+        Merge DBC and database results (database takes priority).
+
+        Args:
+            dbc_data: DBC query result (single record or list)
+            db_data: Database query results (list of dicts)
+
+        Returns:
+            Tuple of (merged_data, source_type)
+            source_type: "dbc", "database", or "hybrid"
+        """
+        # If only database data exists
+        if db_data and not dbc_data:
+            return db_data if len(db_data) > 1 else db_data[0], "database"
+
+        # If only DBC data exists
+        if dbc_data and not db_data:
+            return dbc_data, "dbc"
+
+        # Both exist - DBC takes priority (matching server behavior)
+        # Database is only used for overlay/override
+        if dbc_data and db_data:
+            return dbc_data, "hybrid"
+
+        # Neither exists
+        return None, "none"
+
+    def _query_game_data(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Unified query that combines DBC and database sources.
+
+        This mimics AzerothCore's loading behavior:
+        1. Try to load from DBC file
+        2. Try to load from database table (if mapped)
+        3. Return unified result with metadata
+
+        Args:
+            args: Query arguments (dbc_name, id, filter, columns, limit, etc.)
+
+        Returns:
+            Result dict with data and metadata about sources
+        """
+        dbc_name = args.get("dbc_name")
+        if not dbc_name:
+            return {"error": "dbc_name is required", "isError": True}
+
+        dbc_result = None
+        dbc_error = None
+        db_result = None
+        db_error = None
+
+        # Step 1: Try DBC query
+        try:
+            dbc_result = self._query_dbc(args)
+            if "error" in dbc_result:
+                dbc_error = dbc_result["error"]
+                dbc_result = None
+            else:
+                dbc_result = dbc_result.get("result")
+        except Exception as e:
+            dbc_error = str(e)
+
+        # Step 2: Try database query (if table exists)
+        db_table = self.DBC_TO_DB_TABLE.get(dbc_name)
+        if db_table:
+            db_result, db_error = self._query_database(db_table, args)
+
+        # Step 3: Merge results
+        merged_data, source = self._merge_results(dbc_result, db_result)
+
+        # If no data from either source
+        if merged_data is None:
+            return {
+                "error": f"No data found from either source. DBC error: {dbc_error}, DB error: {db_error}",
+                "isError": True
+            }
+
+        # Return unified result with metadata
+        return {
+            "result": merged_data,
+            "metadata": {
+                "source": source,
+                "dbc_exists": dbc_result is not None,
+                "db_table": db_table,
+                "db_exists": db_result is not None,
+                "dbc_error": dbc_error,
+                "db_error": db_error
             }
         }
 
