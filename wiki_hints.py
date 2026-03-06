@@ -109,6 +109,31 @@ class WikiHints:
                 12: "Quest Item (always stackable, never sold)",
             },
         },
+        "creature_template": {
+            "type_field_index": 33,  # type field in creature_template (creatureType from SharedDefines.h)
+            "type_map": {
+                1: "Beast - Can be skinned, tamed by hunters",
+                2: "Dragonkin - Dragon-like creatures",
+                3: "Demon - Chaotic magical beings",
+                4: "Elemental - Primal force creature",
+                5: "Giant - Large humanoid/mammal-type",
+                6: "Undead - Reanimated corpse or similar",
+                7: "Humanoid - Human, goblin, tauren, etc.",
+                8: "Critter - Non-hostile small creatures (rabbits, birds)",
+                9: "Mechanical - Constructs, golems, robots",
+                10: "Not Specified - No creature type set",
+                11: "Totem - Hunter/druid totems",
+                12: "Non-Combat Pet - Companion pet",
+                13: "Gas Cloud - Area effect cloud",
+            },
+            "key_fields": {
+                "0": "entry - Creature ID (matches creature_loot_template.entry)",
+                "6": "name - Creature name",
+                "33": "type - Creature type from SharedDefines.h enum",
+                "24": "creatureTypeFlags - Special behavior flags (tameable, boss, etc.)",
+                "95": "lootId - References creature_loot_template.entry",
+            },
+        },
     }
 
     def __init__(self, wiki_path: Optional[str] = None):
@@ -192,6 +217,44 @@ class WikiHints:
                 hints.append(f"Field {idx_str}: {description} = '{result[idx_str]}'")
 
         return hints
+
+    def _extract_creature_type_hint(
+        self, result: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """Generate hints for Creature data based on creatureType field."""
+        creature_info = self.TYPE_HINTS.get("creature_template", {})
+        type_index = str(creature_info.get("type_field_index", 23))
+
+        if type_index not in result:
+            return None
+
+        try:
+            creature_type = int(result[type_index])
+            type_name = creature_info.get("type_map", {}).get(
+                creature_type, f"Unknown Type ({creature_type})"
+            )
+
+            hints = {
+                "table": "creature_template",
+                "context": [f"Creature Type: {type_name}"],
+                "related_tables": [],
+                "notes": [],
+            }
+
+            # Check for loot template reference
+            loot_id = result.get("95")  # lootId field
+            if loot_id and str(loot_id).strip() != "0" and str(loot_id).isdigit():
+                hints["related_tables"].append(
+                    f"creature_loot_template.entry={loot_id} (loot)"
+                )
+
+            # Check for name field (index 6 in creature_template)
+            if "6" in result and result["6"] and str(result["6"]) not in ("", "NULL"):
+                hints["notes"].append(f"Name: {result['6']}")
+
+            return hints
+        except (ValueError, TypeError):
+            return None
 
     def _extract_lock_hints(self, result: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Generate hints for Lock DBC data with slot-by-slot interpretation."""
@@ -354,6 +417,15 @@ class WikiHints:
                     )
                 except (ValueError, TypeError):
                     pass
+
+        # Creature-specific hints
+        if table_name == "creature_template" or table_name in {
+            "Creature",
+            "creature_dbc",
+        }:
+            creature_hints = self._extract_creature_type_hint(result)
+            if creature_hints:
+                return creature_hints
 
         # Lock-specific hints
         if "lock" in table_name.lower() or table_name == "Lock":
