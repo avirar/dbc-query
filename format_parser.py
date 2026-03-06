@@ -35,6 +35,15 @@ class FormatParser:
         "CreatureFamily": "CreatureFamily",
         "Talent": "TalentEntry",
         "TalentTab": "TalentTabEntry",
+        "Lock": "LockEntry",
+        # File names with underscores -> Format names without
+        "Achievement_Category": "AchievementCategory",
+        "Achievement_Criteria": "AchievementCriteria",
+        # File names plural -> Format names with Entry suffix
+        "LFGDungeons": "LFGDungeonEntry",
+        "SpellCastTimes": "SpellCastTime",
+        # Abbreviated file names
+        "RandPropPoints": "RandomPropertiesPoints",
         # Add more mappings as discovered
     }
 
@@ -62,7 +71,7 @@ class FormatParser:
         if not self.dbcfmt_path.exists():
             raise FileNotFoundError(f"DBCfmt.h not found at: {self.dbcfmt_path}")
 
-        with open(self.dbcfmt_path, 'r') as f:
+        with open(self.dbcfmt_path, "r") as f:
             content = f.read()
 
         # Pattern matches:
@@ -158,9 +167,9 @@ class FormatParser:
         """
         size = 0
         for char in format_string:
-            if char in ('i', 'f', 's', 'n', 'd', 'l', 'x'):
+            if char in ("i", "f", "s", "n", "d", "l", "x"):
                 size += 4  # 4-byte fields
-            elif char in ('b', 'X'):
+            elif char in ("b", "X"):
                 size += 1  # 1-byte fields
         return size
 
