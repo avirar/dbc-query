@@ -427,8 +427,47 @@ class DBCQueryMCP:
         if not dbc_name:
             return {"error": "dbc_name is required", "isError": True}
 
-        # Get format string to know total field count
-        format_string = self.format_parser.get_format(dbc_name)
+        # Check if this is a pure SQL-only type (no DBC equivalent)
+        is_pure_sql = dbc_name in {"Quest", "Creature", "GameObject"}
+
+        # Get format string to know total field count (skip for pure SQL types)
+        format_string = (
+            self.format_parser.get_format(dbc_name) if not is_pure_sql else None
+        )
+
+        # For pure SQL tables, get column info from database instead
+        if is_pure_sql and dbc_name in self.DBC_TO_DB_TABLE:
+            table_info = self.DBC_TO_DB_TABLE[dbc_name][0]
+            table_name = table_info[0]
+            database = table_info[1]
+            columns = self._get_db_column_mapping(table_name, database)
+
+            if columns:
+                fields = []
+                for idx, col_name in enumerate(columns):
+                    field_entry = {
+                        "index": idx,
+                        "name": col_name,
+                        "type": "unknown",
+                        "format_char": "?",
+                        "has_json_mapping": False,
+                        "has_struct_mapping": False,
+                        "description": f"Column from pure SQL table {table_name}",
+                    }
+                    fields.append(field_entry)
+
+                return {
+                    "result": {
+                        "dbc": dbc_name,
+                        "field_count": len(fields),
+                        "mapped_from_json": 0,
+                        "mapped_from_struct": 0,
+                        "total_mapped": len(fields),
+                        "fields": fields,
+                        "note": f"Pure SQL table: {table_name} (no DBC equivalent)",
+                    }
+                }
+
         if not format_string:
             return {"error": f"No format found for DBC: {dbc_name}", "isError": True}
 
@@ -594,7 +633,10 @@ class DBCQueryMCP:
                         column_name = column_mapping[idx]
                         if isinstance(value, str):
                             escaped_value = value.replace("'", "''")
-                            where_clauses.append(f"`{column_name}` = '{escaped_value}'")
+                            # Use LIKE for substring matching on string fields
+                            where_clauses.append(
+                                f"`{column_name}` LIKE '%{escaped_value}%'"
+                            )
                         else:
                             where_clauses.append(f"`{column_name}` = {value}")
 
