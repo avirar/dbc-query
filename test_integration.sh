@@ -203,5 +203,38 @@ print(f'  error_preview={err[:120]}...')
 echo "$result"
 echo "  PASS"
 
+# Test 17: lookup gameobject_questitem (new auxiliary table)
+echo ""
+echo "Test 17: lookup gameobject_questitem (sql_auxiliary category)"
+result=$(call_tool lookup_datastore '{"query": "gameobject_questitem"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+m=d['result']['matches'][0]
+print(f'  category={m[\"category\"]}, sql_table={m[\"sql_table\"]}')
+cols = m.get('sql_columns', [])
+print(f'  has_sql_columns={len(cols) > 0}, first={cols[0][\"name\"] if cols else \"N/A\"}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 18: query_game_data with new auxiliary table
+echo ""
+echo "Test 18: query_game_data gameobject_questitem for item 11119"
+result=$(call_tool query_game_data '{"dbc_name": "gameobject_questitem", "filter": {"ItemId": 11119}}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:80]}...')
+else:
+    rows = d.get('result', [])
+    print(f'  count={len(rows)}')
+    if rows:
+        print(f'  first: GameObjectEntry={rows[0].get(\"GameObjectEntry\")}, ItemId={rows[0].get(\"ItemId\")}')
+")
+echo "$result"
+echo "  PASS"
+
 echo ""
 echo "All tests completed successfully!"

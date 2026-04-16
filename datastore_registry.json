@@ -11756,58 +11756,54 @@
       }
     },
     "VehicleAccessory": {
-      "category": "sql_objectmgr",
-      "sql_table": "vehicle_template_accessory",
-      "sql_database": "db_world",
-      "store_variable": "",
-      "store_type": "",
-      "container_type": "",
-      "loader_function": "",
-      "header_file": "",
+      "category": "sql_auxiliary",
+      "sql_table": "vehicle_accessory",
+      "sql_database": "acore_world",
       "c_struct": "VehicleAccessory",
       "fields": {
-        "entry / guid": {
-          "name": "uint32",
-          "type": "map key",
-          "sql_column": "entry / guid",
-          "notes": "Template entry vs spawn guid"
+        "0": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
         },
-        "accessory_entry": {
-          "name": "uint32",
-          "type": "AccessoryEntry",
-          "sql_column": "accessory_entry",
-          "notes": ""
+        "1": {
+          "name": "accessory_entry",
+          "type": "int32",
+          "sql_column": "accessory_entry"
         },
-        "seat_id": {
-          "name": "int8",
-          "type": "SeatId",
-          "sql_column": "seat_id",
-          "notes": ""
+        "2": {
+          "name": "seat_id",
+          "type": "int8",
+          "sql_column": "seat_id"
         },
-        "minion": {
-          "name": "uint32",
-          "type": "IsMinion",
-          "sql_column": "minion",
-          "notes": "Read as bool"
+        "3": {
+          "name": "minion",
+          "type": "int8",
+          "sql_column": "minion"
         },
-        "summontype": {
-          "name": "uint8",
-          "type": "SummonedType",
-          "sql_column": "summontype",
-          "notes": "Default 6"
+        "4": {
+          "name": "description",
+          "type": "string",
+          "sql_column": "description"
         },
-        "summontimer": {
-          "name": "uint32",
-          "type": "SummonTime",
-          "sql_column": "summontimer",
-          "notes": "Default 30000"
+        "5": {
+          "name": "summontype",
+          "type": "int8",
+          "sql_column": "summontype"
         },
-        "description": {
-          "name": "",
-          "type": "*(not loaded)*",
-          "sql_column": "description",
-          "notes": "SQL comment only"
+        "6": {
+          "name": "summontimer",
+          "type": "int32",
+          "sql_column": "summontimer"
         }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: vehicle_accessory. Use lookup_datastore(query='vehicle_accessory') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM vehicle_accessory"
       }
     },
     "VehicleSeatAddon": {
@@ -15050,6 +15046,3695 @@
           "notes": "time_t"
         }
       }
+    },
+    "ArenaSeasonReward": {
+      "category": "sql_auxiliary",
+      "sql_table": "arena_season_reward",
+      "sql_database": "acore_world",
+      "c_struct": "ArenaSeasonReward",
+      "fields": {
+        "0": {
+          "name": "group_id",
+          "type": "int32",
+          "sql_column": "group_id"
+        },
+        "1": {
+          "name": "type",
+          "type": "enum",
+          "sql_column": "type"
+        },
+        "2": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: arena_season_reward. Use lookup_datastore(query='arena_season_reward') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM arena_season_reward"
+      }
+    },
+    "ArenaSeasonRewardGroup": {
+      "category": "sql_auxiliary",
+      "sql_table": "arena_season_reward_group",
+      "sql_database": "acore_world",
+      "c_struct": "ArenaSeasonRewardGroup",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "arena_season",
+          "type": "int8",
+          "sql_column": "arena_season"
+        },
+        "2": {
+          "name": "criteria_type",
+          "type": "enum",
+          "sql_column": "criteria_type"
+        },
+        "3": {
+          "name": "min_criteria",
+          "type": "float",
+          "sql_column": "min_criteria"
+        },
+        "4": {
+          "name": "max_criteria",
+          "type": "float",
+          "sql_column": "max_criteria"
+        },
+        "5": {
+          "name": "reward_mail_template_id",
+          "type": "int32",
+          "sql_column": "reward_mail_template_id"
+        },
+        "6": {
+          "name": "reward_mail_subject",
+          "type": "string",
+          "sql_column": "reward_mail_subject"
+        },
+        "7": {
+          "name": "reward_mail_body",
+          "type": "string",
+          "sql_column": "reward_mail_body"
+        },
+        "8": {
+          "name": "gold_reward",
+          "type": "int32",
+          "sql_column": "gold_reward"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: arena_season_reward_group. Use lookup_datastore(query='arena_season_reward_group') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM arena_season_reward_group"
+      }
+    },
+    "AuctionhousebotProfessionitems": {
+      "category": "sql_auxiliary",
+      "sql_table": "auctionhousebot_professionItems",
+      "sql_database": "acore_world",
+      "c_struct": "AuctionhousebotProfessionitems",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: auctionhousebot_professionItems. Use lookup_datastore(query='auctionhousebot_professionItems') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM auctionhousebot_professionItems"
+      }
+    },
+    "BattlemasterEntry": {
+      "category": "sql_auxiliary",
+      "sql_table": "battlemaster_entry",
+      "sql_database": "acore_world",
+      "c_struct": "BattlemasterEntry",
+      "fields": {
+        "0": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        },
+        "1": {
+          "name": "bg_template",
+          "type": "int32",
+          "sql_column": "bg_template"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: battlemaster_entry. Use lookup_datastore(query='battlemaster_entry') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM battlemaster_entry"
+      }
+    },
+    "CreatureDefaultTrainer": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_default_trainer",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureDefaultTrainer",
+      "fields": {
+        "0": {
+          "name": "CreatureId",
+          "type": "int32",
+          "sql_column": "CreatureId"
+        },
+        "1": {
+          "name": "TrainerId",
+          "type": "int32",
+          "sql_column": "TrainerId"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_default_trainer. Use lookup_datastore(query='creature_default_trainer') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_default_trainer"
+      }
+    },
+    "CreatureLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_loot_template. Use lookup_datastore(query='creature_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_loot_template"
+      }
+    },
+    "CreatureQuestender": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_questender",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureQuestender",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "quest",
+          "type": "int32",
+          "sql_column": "quest"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_questender. Use lookup_datastore(query='creature_questender') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_questender"
+      }
+    },
+    "CreatureTemplateAddon": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_template_addon",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureTemplateAddon",
+      "fields": {
+        "0": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        },
+        "1": {
+          "name": "path_id",
+          "type": "int32",
+          "sql_column": "path_id"
+        },
+        "2": {
+          "name": "mount",
+          "type": "int32",
+          "sql_column": "mount"
+        },
+        "3": {
+          "name": "bytes1",
+          "type": "int32",
+          "sql_column": "bytes1"
+        },
+        "4": {
+          "name": "bytes2",
+          "type": "int32",
+          "sql_column": "bytes2"
+        },
+        "5": {
+          "name": "emote",
+          "type": "int32",
+          "sql_column": "emote"
+        },
+        "6": {
+          "name": "visibilityDistanceType",
+          "type": "int8",
+          "sql_column": "visibilityDistanceType"
+        },
+        "7": {
+          "name": "auras",
+          "type": "string",
+          "sql_column": "auras"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_template_addon. Use lookup_datastore(query='creature_template_addon') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_template_addon"
+      }
+    },
+    "CreatureTemplateModel": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_template_model",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureTemplateModel",
+      "fields": {
+        "0": {
+          "name": "CreatureID",
+          "type": "int32",
+          "sql_column": "CreatureID"
+        },
+        "1": {
+          "name": "Idx",
+          "type": "int32",
+          "sql_column": "Idx"
+        },
+        "2": {
+          "name": "CreatureDisplayID",
+          "type": "int32",
+          "sql_column": "CreatureDisplayID"
+        },
+        "3": {
+          "name": "DisplayScale",
+          "type": "float",
+          "sql_column": "DisplayScale"
+        },
+        "4": {
+          "name": "Probability",
+          "type": "float",
+          "sql_column": "Probability"
+        },
+        "5": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_template_model. Use lookup_datastore(query='creature_template_model') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_template_model"
+      }
+    },
+    "CreatureTemplateMovement": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_template_movement",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureTemplateMovement",
+      "fields": {
+        "0": {
+          "name": "CreatureId",
+          "type": "int32",
+          "sql_column": "CreatureId"
+        },
+        "1": {
+          "name": "Ground",
+          "type": "int8",
+          "sql_column": "Ground"
+        },
+        "2": {
+          "name": "Swim",
+          "type": "int8",
+          "sql_column": "Swim"
+        },
+        "3": {
+          "name": "Flight",
+          "type": "int8",
+          "sql_column": "Flight"
+        },
+        "4": {
+          "name": "Rooted",
+          "type": "int8",
+          "sql_column": "Rooted"
+        },
+        "5": {
+          "name": "Chase",
+          "type": "int8",
+          "sql_column": "Chase"
+        },
+        "6": {
+          "name": "Random",
+          "type": "int8",
+          "sql_column": "Random"
+        },
+        "7": {
+          "name": "InteractionPauseTimer",
+          "type": "int32",
+          "sql_column": "InteractionPauseTimer"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_template_movement. Use lookup_datastore(query='creature_template_movement') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_template_movement"
+      }
+    },
+    "CreatureTemplateResistance": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_template_resistance",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureTemplateResistance",
+      "fields": {
+        "0": {
+          "name": "CreatureID",
+          "type": "int32",
+          "sql_column": "CreatureID"
+        },
+        "1": {
+          "name": "School",
+          "type": "int8",
+          "sql_column": "School"
+        },
+        "2": {
+          "name": "Resistance",
+          "type": "int32",
+          "sql_column": "Resistance"
+        },
+        "3": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_template_resistance. Use lookup_datastore(query='creature_template_resistance') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_template_resistance"
+      }
+    },
+    "CreatureTemplateSpell": {
+      "category": "sql_auxiliary",
+      "sql_table": "creature_template_spell",
+      "sql_database": "acore_world",
+      "c_struct": "CreatureTemplateSpell",
+      "fields": {
+        "0": {
+          "name": "CreatureID",
+          "type": "int32",
+          "sql_column": "CreatureID"
+        },
+        "1": {
+          "name": "Index",
+          "type": "int8",
+          "sql_column": "Index"
+        },
+        "2": {
+          "name": "Spell",
+          "type": "int32",
+          "sql_column": "Spell"
+        },
+        "3": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: creature_template_spell. Use lookup_datastore(query='creature_template_spell') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM creature_template_spell"
+      }
+    },
+    "DisenchantLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "disenchant_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "DisenchantLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: disenchant_loot_template. Use lookup_datastore(query='disenchant_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM disenchant_loot_template"
+      }
+    },
+    "DungeonAccessRequirements": {
+      "category": "sql_auxiliary",
+      "sql_table": "dungeon_access_requirements",
+      "sql_database": "acore_world",
+      "c_struct": "DungeonAccessRequirements",
+      "fields": {
+        "0": {
+          "name": "dungeon_access_id",
+          "type": "int8",
+          "sql_column": "dungeon_access_id"
+        },
+        "1": {
+          "name": "requirement_type",
+          "type": "int8",
+          "sql_column": "requirement_type"
+        },
+        "2": {
+          "name": "requirement_id",
+          "type": "int32",
+          "sql_column": "requirement_id"
+        },
+        "3": {
+          "name": "requirement_note",
+          "type": "string",
+          "sql_column": "requirement_note"
+        },
+        "4": {
+          "name": "faction",
+          "type": "int8",
+          "sql_column": "faction"
+        },
+        "5": {
+          "name": "priority",
+          "type": "int8",
+          "sql_column": "priority"
+        },
+        "6": {
+          "name": "leader_only",
+          "type": "int8",
+          "sql_column": "leader_only"
+        },
+        "7": {
+          "name": "comment",
+          "type": "string",
+          "sql_column": "comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: dungeon_access_requirements. Use lookup_datastore(query='dungeon_access_requirements') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM dungeon_access_requirements"
+      }
+    },
+    "FishingLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "fishing_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "FishingLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: fishing_loot_template. Use lookup_datastore(query='fishing_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM fishing_loot_template"
+      }
+    },
+    "GameEventArenaSeasons": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_arena_seasons",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventArenaSeasons",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "season",
+          "type": "int8",
+          "sql_column": "season"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_arena_seasons. Use lookup_datastore(query='game_event_arena_seasons') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_arena_seasons"
+      }
+    },
+    "GameEventBattlegroundHoliday": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_battleground_holiday",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventBattlegroundHoliday",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "bgflag",
+          "type": "int32",
+          "sql_column": "bgflag"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_battleground_holiday. Use lookup_datastore(query='game_event_battleground_holiday') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_battleground_holiday"
+      }
+    },
+    "GameEventCreature": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_creature",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventCreature",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int32",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_creature. Use lookup_datastore(query='game_event_creature') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_creature"
+      }
+    },
+    "GameEventCreatureQuest": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_creature_quest",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventCreatureQuest",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "2": {
+          "name": "quest",
+          "type": "int32",
+          "sql_column": "quest"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_creature_quest. Use lookup_datastore(query='game_event_creature_quest') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_creature_quest"
+      }
+    },
+    "GameEventGameobject": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_gameobject",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventGameobject",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int32",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_gameobject. Use lookup_datastore(query='game_event_gameobject') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_gameobject"
+      }
+    },
+    "GameEventGameobjectQuest": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_gameobject_quest",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventGameobjectQuest",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "2": {
+          "name": "quest",
+          "type": "int32",
+          "sql_column": "quest"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_gameobject_quest. Use lookup_datastore(query='game_event_gameobject_quest') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_gameobject_quest"
+      }
+    },
+    "GameEventNpcflag": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_npcflag",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventNpcflag",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        },
+        "2": {
+          "name": "npcflag",
+          "type": "int32",
+          "sql_column": "npcflag"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_npcflag. Use lookup_datastore(query='game_event_npcflag') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_npcflag"
+      }
+    },
+    "GameEventPool": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_pool",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventPool",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int32",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "pool_entry",
+          "type": "int32",
+          "sql_column": "pool_entry"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_pool. Use lookup_datastore(query='game_event_pool') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_pool"
+      }
+    },
+    "GameEventPrerequisite": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_prerequisite",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventPrerequisite",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "prerequisite_event",
+          "type": "int32",
+          "sql_column": "prerequisite_event"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_prerequisite. Use lookup_datastore(query='game_event_prerequisite') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_prerequisite"
+      }
+    },
+    "GameEventQuestCondition": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_quest_condition",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventQuestCondition",
+      "fields": {
+        "0": {
+          "name": "eventEntry",
+          "type": "int8",
+          "sql_column": "eventEntry"
+        },
+        "1": {
+          "name": "quest",
+          "type": "int32",
+          "sql_column": "quest"
+        },
+        "2": {
+          "name": "condition_id",
+          "type": "int32",
+          "sql_column": "condition_id"
+        },
+        "3": {
+          "name": "num",
+          "type": "float",
+          "sql_column": "num"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_quest_condition. Use lookup_datastore(query='game_event_quest_condition') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_quest_condition"
+      }
+    },
+    "GameEventSeasonalQuestrelation": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_event_seasonal_questrelation",
+      "sql_database": "acore_world",
+      "c_struct": "GameEventSeasonalQuestrelation",
+      "fields": {
+        "0": {
+          "name": "questId",
+          "type": "int32",
+          "sql_column": "questId"
+        },
+        "1": {
+          "name": "eventEntry",
+          "type": "int32",
+          "sql_column": "eventEntry"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_event_seasonal_questrelation. Use lookup_datastore(query='game_event_seasonal_questrelation') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_event_seasonal_questrelation"
+      }
+    },
+    "GameGraveyard": {
+      "category": "sql_auxiliary",
+      "sql_table": "game_graveyard",
+      "sql_database": "acore_world",
+      "c_struct": "GameGraveyard",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "Map",
+          "type": "int32",
+          "sql_column": "Map"
+        },
+        "2": {
+          "name": "x",
+          "type": "float",
+          "sql_column": "x"
+        },
+        "3": {
+          "name": "y",
+          "type": "float",
+          "sql_column": "y"
+        },
+        "4": {
+          "name": "z",
+          "type": "float",
+          "sql_column": "z"
+        },
+        "5": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: game_graveyard. Use lookup_datastore(query='game_graveyard') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM game_graveyard"
+      }
+    },
+    "GameobjectLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "gameobject_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "GameobjectLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: gameobject_loot_template. Use lookup_datastore(query='gameobject_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM gameobject_loot_template"
+      }
+    },
+    "GameobjectQuestender": {
+      "category": "sql_auxiliary",
+      "sql_table": "gameobject_questender",
+      "sql_database": "acore_world",
+      "c_struct": "GameobjectQuestender",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "quest",
+          "type": "int32",
+          "sql_column": "quest"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: gameobject_questender. Use lookup_datastore(query='gameobject_questender') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM gameobject_questender"
+      }
+    },
+    "GameobjectQueststarter": {
+      "category": "sql_auxiliary",
+      "sql_table": "gameobject_queststarter",
+      "sql_database": "acore_world",
+      "c_struct": "GameobjectQueststarter",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "quest",
+          "type": "int32",
+          "sql_column": "quest"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: gameobject_queststarter. Use lookup_datastore(query='gameobject_queststarter') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM gameobject_queststarter"
+      }
+    },
+    "GraveyardZone": {
+      "category": "sql_auxiliary",
+      "sql_table": "graveyard_zone",
+      "sql_database": "acore_world",
+      "c_struct": "GraveyardZone",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "GhostZone",
+          "type": "int32",
+          "sql_column": "GhostZone"
+        },
+        "2": {
+          "name": "Faction",
+          "type": "int32",
+          "sql_column": "Faction"
+        },
+        "3": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: graveyard_zone. Use lookup_datastore(query='graveyard_zone') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM graveyard_zone"
+      }
+    },
+    "ItemLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "item_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "ItemLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: item_loot_template. Use lookup_datastore(query='item_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM item_loot_template"
+      }
+    },
+    "LfgDungeonTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "lfg_dungeon_template",
+      "sql_database": "acore_world",
+      "c_struct": "LfgDungeonTemplate",
+      "fields": {
+        "0": {
+          "name": "dungeonId",
+          "type": "int32",
+          "sql_column": "dungeonId"
+        },
+        "1": {
+          "name": "name",
+          "type": "string",
+          "sql_column": "name"
+        },
+        "2": {
+          "name": "position_x",
+          "type": "float",
+          "sql_column": "position_x"
+        },
+        "3": {
+          "name": "position_y",
+          "type": "float",
+          "sql_column": "position_y"
+        },
+        "4": {
+          "name": "position_z",
+          "type": "float",
+          "sql_column": "position_z"
+        },
+        "5": {
+          "name": "orientation",
+          "type": "float",
+          "sql_column": "orientation"
+        },
+        "6": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: lfg_dungeon_template. Use lookup_datastore(query='lfg_dungeon_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM lfg_dungeon_template"
+      }
+    },
+    "MailLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "mail_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "MailLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: mail_loot_template. Use lookup_datastore(query='mail_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM mail_loot_template"
+      }
+    },
+    "MillingLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "milling_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "MillingLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: milling_loot_template. Use lookup_datastore(query='milling_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM milling_loot_template"
+      }
+    },
+    "NpcTrainer": {
+      "category": "sql_auxiliary",
+      "sql_table": "npc_trainer",
+      "sql_database": "acore_world",
+      "c_struct": "NpcTrainer",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "SpellID",
+          "type": "int32",
+          "sql_column": "SpellID"
+        },
+        "2": {
+          "name": "MoneyCost",
+          "type": "int32",
+          "sql_column": "MoneyCost"
+        },
+        "3": {
+          "name": "ReqSkillLine",
+          "type": "int32",
+          "sql_column": "ReqSkillLine"
+        },
+        "4": {
+          "name": "ReqSkillRank",
+          "type": "int32",
+          "sql_column": "ReqSkillRank"
+        },
+        "5": {
+          "name": "ReqLevel",
+          "type": "int8",
+          "sql_column": "ReqLevel"
+        },
+        "6": {
+          "name": "ReqSpell",
+          "type": "int32",
+          "sql_column": "ReqSpell"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: npc_trainer. Use lookup_datastore(query='npc_trainer') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM npc_trainer"
+      }
+    },
+    "PickpocketingLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "pickpocketing_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "PickpocketingLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: pickpocketing_loot_template. Use lookup_datastore(query='pickpocketing_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM pickpocketing_loot_template"
+      }
+    },
+    "PlayerClassStats": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_class_stats",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerClassStats",
+      "fields": {
+        "0": {
+          "name": "Class",
+          "type": "int8",
+          "sql_column": "Class"
+        },
+        "1": {
+          "name": "Level",
+          "type": "int8",
+          "sql_column": "Level"
+        },
+        "2": {
+          "name": "BaseHP",
+          "type": "int32",
+          "sql_column": "BaseHP"
+        },
+        "3": {
+          "name": "BaseMana",
+          "type": "int32",
+          "sql_column": "BaseMana"
+        },
+        "4": {
+          "name": "Strength",
+          "type": "int32",
+          "sql_column": "Strength"
+        },
+        "5": {
+          "name": "Agility",
+          "type": "int32",
+          "sql_column": "Agility"
+        },
+        "6": {
+          "name": "Stamina",
+          "type": "int32",
+          "sql_column": "Stamina"
+        },
+        "7": {
+          "name": "Intellect",
+          "type": "int32",
+          "sql_column": "Intellect"
+        },
+        "8": {
+          "name": "Spirit",
+          "type": "int32",
+          "sql_column": "Spirit"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_class_stats. Use lookup_datastore(query='player_class_stats') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_class_stats"
+      }
+    },
+    "PlayerFactionchangeAchievement": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_factionchange_achievement",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerFactionchangeAchievement",
+      "fields": {
+        "0": {
+          "name": "alliance_id",
+          "type": "int32",
+          "sql_column": "alliance_id"
+        },
+        "1": {
+          "name": "alliance_comment",
+          "type": "string",
+          "sql_column": "alliance_comment"
+        },
+        "2": {
+          "name": "horde_id",
+          "type": "int32",
+          "sql_column": "horde_id"
+        },
+        "3": {
+          "name": "horde_comment",
+          "type": "string",
+          "sql_column": "horde_comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_factionchange_achievement. Use lookup_datastore(query='player_factionchange_achievement') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_factionchange_achievement"
+      }
+    },
+    "PlayerFactionchangeItems": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_factionchange_items",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerFactionchangeItems",
+      "fields": {
+        "0": {
+          "name": "alliance_id",
+          "type": "int32",
+          "sql_column": "alliance_id"
+        },
+        "1": {
+          "name": "alliance_comment",
+          "type": "string",
+          "sql_column": "alliance_comment"
+        },
+        "2": {
+          "name": "horde_id",
+          "type": "int32",
+          "sql_column": "horde_id"
+        },
+        "3": {
+          "name": "horde_comment",
+          "type": "string",
+          "sql_column": "horde_comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_factionchange_items. Use lookup_datastore(query='player_factionchange_items') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_factionchange_items"
+      }
+    },
+    "PlayerFactionchangeQuests": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_factionchange_quests",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerFactionchangeQuests",
+      "fields": {
+        "0": {
+          "name": "alliance_id",
+          "type": "int32",
+          "sql_column": "alliance_id"
+        },
+        "1": {
+          "name": "horde_id",
+          "type": "int32",
+          "sql_column": "horde_id"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_factionchange_quests. Use lookup_datastore(query='player_factionchange_quests') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_factionchange_quests"
+      }
+    },
+    "PlayerFactionchangeReputations": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_factionchange_reputations",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerFactionchangeReputations",
+      "fields": {
+        "0": {
+          "name": "alliance_id",
+          "type": "int32",
+          "sql_column": "alliance_id"
+        },
+        "1": {
+          "name": "alliance_comment",
+          "type": "string",
+          "sql_column": "alliance_comment"
+        },
+        "2": {
+          "name": "horde_id",
+          "type": "int32",
+          "sql_column": "horde_id"
+        },
+        "3": {
+          "name": "horde_comment",
+          "type": "string",
+          "sql_column": "horde_comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_factionchange_reputations. Use lookup_datastore(query='player_factionchange_reputations') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_factionchange_reputations"
+      }
+    },
+    "PlayerFactionchangeSpells": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_factionchange_spells",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerFactionchangeSpells",
+      "fields": {
+        "0": {
+          "name": "alliance_id",
+          "type": "int32",
+          "sql_column": "alliance_id"
+        },
+        "1": {
+          "name": "alliance_comment",
+          "type": "string",
+          "sql_column": "alliance_comment"
+        },
+        "2": {
+          "name": "horde_id",
+          "type": "int32",
+          "sql_column": "horde_id"
+        },
+        "3": {
+          "name": "horde_comment",
+          "type": "string",
+          "sql_column": "horde_comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_factionchange_spells. Use lookup_datastore(query='player_factionchange_spells') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_factionchange_spells"
+      }
+    },
+    "PlayerFactionchangeTitles": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_factionchange_titles",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerFactionchangeTitles",
+      "fields": {
+        "0": {
+          "name": "alliance_id",
+          "type": "int32",
+          "sql_column": "alliance_id"
+        },
+        "1": {
+          "name": "alliance_comment",
+          "type": "string",
+          "sql_column": "alliance_comment"
+        },
+        "2": {
+          "name": "horde_id",
+          "type": "int32",
+          "sql_column": "horde_id"
+        },
+        "3": {
+          "name": "horde_comment",
+          "type": "string",
+          "sql_column": "horde_comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_factionchange_titles. Use lookup_datastore(query='player_factionchange_titles') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_factionchange_titles"
+      }
+    },
+    "PlayerLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_loot_template. Use lookup_datastore(query='player_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_loot_template"
+      }
+    },
+    "PlayerRaceStats": {
+      "category": "sql_auxiliary",
+      "sql_table": "player_race_stats",
+      "sql_database": "acore_world",
+      "c_struct": "PlayerRaceStats",
+      "fields": {
+        "0": {
+          "name": "Race",
+          "type": "int8",
+          "sql_column": "Race"
+        },
+        "1": {
+          "name": "Strength",
+          "type": "int32",
+          "sql_column": "Strength"
+        },
+        "2": {
+          "name": "Agility",
+          "type": "int32",
+          "sql_column": "Agility"
+        },
+        "3": {
+          "name": "Stamina",
+          "type": "int32",
+          "sql_column": "Stamina"
+        },
+        "4": {
+          "name": "Intellect",
+          "type": "int32",
+          "sql_column": "Intellect"
+        },
+        "5": {
+          "name": "Spirit",
+          "type": "int32",
+          "sql_column": "Spirit"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: player_race_stats. Use lookup_datastore(query='player_race_stats') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM player_race_stats"
+      }
+    },
+    "PlayercreateinfoAction": {
+      "category": "sql_auxiliary",
+      "sql_table": "playercreateinfo_action",
+      "sql_database": "acore_world",
+      "c_struct": "PlayercreateinfoAction",
+      "fields": {
+        "0": {
+          "name": "race",
+          "type": "int8",
+          "sql_column": "race"
+        },
+        "1": {
+          "name": "class",
+          "type": "int8",
+          "sql_column": "class"
+        },
+        "2": {
+          "name": "button",
+          "type": "int32",
+          "sql_column": "button"
+        },
+        "3": {
+          "name": "action",
+          "type": "int32",
+          "sql_column": "action"
+        },
+        "4": {
+          "name": "type",
+          "type": "int32",
+          "sql_column": "type"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: playercreateinfo_action. Use lookup_datastore(query='playercreateinfo_action') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM playercreateinfo_action"
+      }
+    },
+    "PlayercreateinfoCastSpell": {
+      "category": "sql_auxiliary",
+      "sql_table": "playercreateinfo_cast_spell",
+      "sql_database": "acore_world",
+      "c_struct": "PlayercreateinfoCastSpell",
+      "fields": {
+        "0": {
+          "name": "raceMask",
+          "type": "int32",
+          "sql_column": "raceMask"
+        },
+        "1": {
+          "name": "classMask",
+          "type": "int32",
+          "sql_column": "classMask"
+        },
+        "2": {
+          "name": "spell",
+          "type": "int32",
+          "sql_column": "spell"
+        },
+        "3": {
+          "name": "note",
+          "type": "string",
+          "sql_column": "note"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: playercreateinfo_cast_spell. Use lookup_datastore(query='playercreateinfo_cast_spell') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM playercreateinfo_cast_spell"
+      }
+    },
+    "PlayercreateinfoItem": {
+      "category": "sql_auxiliary",
+      "sql_table": "playercreateinfo_item",
+      "sql_database": "acore_world",
+      "c_struct": "PlayercreateinfoItem",
+      "fields": {
+        "0": {
+          "name": "race",
+          "type": "int8",
+          "sql_column": "race"
+        },
+        "1": {
+          "name": "class",
+          "type": "int8",
+          "sql_column": "class"
+        },
+        "2": {
+          "name": "itemid",
+          "type": "int32",
+          "sql_column": "itemid"
+        },
+        "3": {
+          "name": "amount",
+          "type": "int32",
+          "sql_column": "amount"
+        },
+        "4": {
+          "name": "Note",
+          "type": "string",
+          "sql_column": "Note"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: playercreateinfo_item. Use lookup_datastore(query='playercreateinfo_item') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM playercreateinfo_item"
+      }
+    },
+    "PlayercreateinfoSkills": {
+      "category": "sql_auxiliary",
+      "sql_table": "playercreateinfo_skills",
+      "sql_database": "acore_world",
+      "c_struct": "PlayercreateinfoSkills",
+      "fields": {
+        "0": {
+          "name": "raceMask",
+          "type": "int32",
+          "sql_column": "raceMask"
+        },
+        "1": {
+          "name": "classMask",
+          "type": "int32",
+          "sql_column": "classMask"
+        },
+        "2": {
+          "name": "skill",
+          "type": "int32",
+          "sql_column": "skill"
+        },
+        "3": {
+          "name": "rank",
+          "type": "int32",
+          "sql_column": "rank"
+        },
+        "4": {
+          "name": "comment",
+          "type": "string",
+          "sql_column": "comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: playercreateinfo_skills. Use lookup_datastore(query='playercreateinfo_skills') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM playercreateinfo_skills"
+      }
+    },
+    "PlayercreateinfoSpellCustom": {
+      "category": "sql_auxiliary",
+      "sql_table": "playercreateinfo_spell_custom",
+      "sql_database": "acore_world",
+      "c_struct": "PlayercreateinfoSpellCustom",
+      "fields": {
+        "0": {
+          "name": "racemask",
+          "type": "int32",
+          "sql_column": "racemask"
+        },
+        "1": {
+          "name": "classmask",
+          "type": "int32",
+          "sql_column": "classmask"
+        },
+        "2": {
+          "name": "Spell",
+          "type": "int32",
+          "sql_column": "Spell"
+        },
+        "3": {
+          "name": "Note",
+          "type": "string",
+          "sql_column": "Note"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: playercreateinfo_spell_custom. Use lookup_datastore(query='playercreateinfo_spell_custom') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM playercreateinfo_spell_custom"
+      }
+    },
+    "PoolCreature": {
+      "category": "sql_auxiliary",
+      "sql_table": "pool_creature",
+      "sql_database": "acore_world",
+      "c_struct": "PoolCreature",
+      "fields": {
+        "0": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        },
+        "1": {
+          "name": "pool_entry",
+          "type": "int32",
+          "sql_column": "pool_entry"
+        },
+        "2": {
+          "name": "chance",
+          "type": "float",
+          "sql_column": "chance"
+        },
+        "3": {
+          "name": "description",
+          "type": "string",
+          "sql_column": "description"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: pool_creature. Use lookup_datastore(query='pool_creature') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM pool_creature"
+      }
+    },
+    "PoolGameobject": {
+      "category": "sql_auxiliary",
+      "sql_table": "pool_gameobject",
+      "sql_database": "acore_world",
+      "c_struct": "PoolGameobject",
+      "fields": {
+        "0": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        },
+        "1": {
+          "name": "pool_entry",
+          "type": "int32",
+          "sql_column": "pool_entry"
+        },
+        "2": {
+          "name": "chance",
+          "type": "float",
+          "sql_column": "chance"
+        },
+        "3": {
+          "name": "description",
+          "type": "string",
+          "sql_column": "description"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: pool_gameobject. Use lookup_datastore(query='pool_gameobject') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM pool_gameobject"
+      }
+    },
+    "PoolPool": {
+      "category": "sql_auxiliary",
+      "sql_table": "pool_pool",
+      "sql_database": "acore_world",
+      "c_struct": "PoolPool",
+      "fields": {
+        "0": {
+          "name": "pool_id",
+          "type": "int32",
+          "sql_column": "pool_id"
+        },
+        "1": {
+          "name": "mother_pool",
+          "type": "int32",
+          "sql_column": "mother_pool"
+        },
+        "2": {
+          "name": "chance",
+          "type": "float",
+          "sql_column": "chance"
+        },
+        "3": {
+          "name": "description",
+          "type": "string",
+          "sql_column": "description"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: pool_pool. Use lookup_datastore(query='pool_pool') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM pool_pool"
+      }
+    },
+    "PoolQuest": {
+      "category": "sql_auxiliary",
+      "sql_table": "pool_quest",
+      "sql_database": "acore_world",
+      "c_struct": "PoolQuest",
+      "fields": {
+        "0": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        },
+        "1": {
+          "name": "pool_entry",
+          "type": "int32",
+          "sql_column": "pool_entry"
+        },
+        "2": {
+          "name": "description",
+          "type": "string",
+          "sql_column": "description"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: pool_quest. Use lookup_datastore(query='pool_quest') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM pool_quest"
+      }
+    },
+    "ProspectingLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "prospecting_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "ProspectingLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: prospecting_loot_template. Use lookup_datastore(query='prospecting_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM prospecting_loot_template"
+      }
+    },
+    "QuestDetails": {
+      "category": "sql_auxiliary",
+      "sql_table": "quest_details",
+      "sql_database": "acore_world",
+      "c_struct": "QuestDetails",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "Emote1",
+          "type": "int32",
+          "sql_column": "Emote1"
+        },
+        "2": {
+          "name": "Emote2",
+          "type": "int32",
+          "sql_column": "Emote2"
+        },
+        "3": {
+          "name": "Emote3",
+          "type": "int32",
+          "sql_column": "Emote3"
+        },
+        "4": {
+          "name": "Emote4",
+          "type": "int32",
+          "sql_column": "Emote4"
+        },
+        "5": {
+          "name": "EmoteDelay1",
+          "type": "int32",
+          "sql_column": "EmoteDelay1"
+        },
+        "6": {
+          "name": "EmoteDelay2",
+          "type": "int32",
+          "sql_column": "EmoteDelay2"
+        },
+        "7": {
+          "name": "EmoteDelay3",
+          "type": "int32",
+          "sql_column": "EmoteDelay3"
+        },
+        "8": {
+          "name": "EmoteDelay4",
+          "type": "int32",
+          "sql_column": "EmoteDelay4"
+        },
+        "9": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: quest_details. Use lookup_datastore(query='quest_details') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM quest_details"
+      }
+    },
+    "QuestMailSender": {
+      "category": "sql_auxiliary",
+      "sql_table": "quest_mail_sender",
+      "sql_database": "acore_world",
+      "c_struct": "QuestMailSender",
+      "fields": {
+        "0": {
+          "name": "QuestId",
+          "type": "int32",
+          "sql_column": "QuestId"
+        },
+        "1": {
+          "name": "RewardMailSenderEntry",
+          "type": "int32",
+          "sql_column": "RewardMailSenderEntry"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: quest_mail_sender. Use lookup_datastore(query='quest_mail_sender') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM quest_mail_sender"
+      }
+    },
+    "QuestOfferReward": {
+      "category": "sql_auxiliary",
+      "sql_table": "quest_offer_reward",
+      "sql_database": "acore_world",
+      "c_struct": "QuestOfferReward",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "Emote1",
+          "type": "int32",
+          "sql_column": "Emote1"
+        },
+        "2": {
+          "name": "Emote2",
+          "type": "int32",
+          "sql_column": "Emote2"
+        },
+        "3": {
+          "name": "Emote3",
+          "type": "int32",
+          "sql_column": "Emote3"
+        },
+        "4": {
+          "name": "Emote4",
+          "type": "int32",
+          "sql_column": "Emote4"
+        },
+        "5": {
+          "name": "EmoteDelay1",
+          "type": "int32",
+          "sql_column": "EmoteDelay1"
+        },
+        "6": {
+          "name": "EmoteDelay2",
+          "type": "int32",
+          "sql_column": "EmoteDelay2"
+        },
+        "7": {
+          "name": "EmoteDelay3",
+          "type": "int32",
+          "sql_column": "EmoteDelay3"
+        },
+        "8": {
+          "name": "EmoteDelay4",
+          "type": "int32",
+          "sql_column": "EmoteDelay4"
+        },
+        "9": {
+          "name": "RewardText",
+          "type": "string",
+          "sql_column": "RewardText"
+        },
+        "10": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: quest_offer_reward. Use lookup_datastore(query='quest_offer_reward') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM quest_offer_reward"
+      }
+    },
+    "QuestPoiPoints": {
+      "category": "sql_auxiliary",
+      "sql_table": "quest_poi_points",
+      "sql_database": "acore_world",
+      "c_struct": "QuestPoiPoints",
+      "fields": {
+        "0": {
+          "name": "QuestID",
+          "type": "int32",
+          "sql_column": "QuestID"
+        },
+        "1": {
+          "name": "Idx1",
+          "type": "int32",
+          "sql_column": "Idx1"
+        },
+        "2": {
+          "name": "Idx2",
+          "type": "int32",
+          "sql_column": "Idx2"
+        },
+        "3": {
+          "name": "X",
+          "type": "int32",
+          "sql_column": "X"
+        },
+        "4": {
+          "name": "Y",
+          "type": "int32",
+          "sql_column": "Y"
+        },
+        "5": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: quest_poi_points. Use lookup_datastore(query='quest_poi_points') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM quest_poi_points"
+      }
+    },
+    "QuestRequestItems": {
+      "category": "sql_auxiliary",
+      "sql_table": "quest_request_items",
+      "sql_database": "acore_world",
+      "c_struct": "QuestRequestItems",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "EmoteOnComplete",
+          "type": "int32",
+          "sql_column": "EmoteOnComplete"
+        },
+        "2": {
+          "name": "EmoteOnIncomplete",
+          "type": "int32",
+          "sql_column": "EmoteOnIncomplete"
+        },
+        "3": {
+          "name": "CompletionText",
+          "type": "string",
+          "sql_column": "CompletionText"
+        },
+        "4": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: quest_request_items. Use lookup_datastore(query='quest_request_items') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM quest_request_items"
+      }
+    },
+    "QuestTemplateAddon": {
+      "category": "sql_auxiliary",
+      "sql_table": "quest_template_addon",
+      "sql_database": "acore_world",
+      "c_struct": "QuestTemplateAddon",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "MaxLevel",
+          "type": "int8",
+          "sql_column": "MaxLevel"
+        },
+        "2": {
+          "name": "AllowableClasses",
+          "type": "int32",
+          "sql_column": "AllowableClasses"
+        },
+        "3": {
+          "name": "SourceSpellID",
+          "type": "int32",
+          "sql_column": "SourceSpellID"
+        },
+        "4": {
+          "name": "PrevQuestID",
+          "type": "int32",
+          "sql_column": "PrevQuestID"
+        },
+        "5": {
+          "name": "NextQuestID",
+          "type": "int32",
+          "sql_column": "NextQuestID"
+        },
+        "6": {
+          "name": "ExclusiveGroup",
+          "type": "int32",
+          "sql_column": "ExclusiveGroup"
+        },
+        "7": {
+          "name": "BreadcrumbForQuestId",
+          "type": "int32",
+          "sql_column": "BreadcrumbForQuestId"
+        },
+        "8": {
+          "name": "RewardMailTemplateID",
+          "type": "int32",
+          "sql_column": "RewardMailTemplateID"
+        },
+        "9": {
+          "name": "RewardMailDelay",
+          "type": "int32",
+          "sql_column": "RewardMailDelay"
+        },
+        "10": {
+          "name": "RequiredSkillID",
+          "type": "int32",
+          "sql_column": "RequiredSkillID"
+        },
+        "11": {
+          "name": "RequiredSkillPoints",
+          "type": "int32",
+          "sql_column": "RequiredSkillPoints"
+        },
+        "12": {
+          "name": "RequiredMinRepFaction",
+          "type": "int32",
+          "sql_column": "RequiredMinRepFaction"
+        },
+        "13": {
+          "name": "RequiredMaxRepFaction",
+          "type": "int32",
+          "sql_column": "RequiredMaxRepFaction"
+        },
+        "14": {
+          "name": "RequiredMinRepValue",
+          "type": "int32",
+          "sql_column": "RequiredMinRepValue"
+        },
+        "15": {
+          "name": "RequiredMaxRepValue",
+          "type": "int32",
+          "sql_column": "RequiredMaxRepValue"
+        },
+        "16": {
+          "name": "ProvidedItemCount",
+          "type": "int8",
+          "sql_column": "ProvidedItemCount"
+        },
+        "17": {
+          "name": "SpecialFlags",
+          "type": "int32",
+          "sql_column": "SpecialFlags"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: quest_template_addon. Use lookup_datastore(query='quest_template_addon') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM quest_template_addon"
+      }
+    },
+    "ReferenceLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "reference_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "ReferenceLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: reference_loot_template. Use lookup_datastore(query='reference_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM reference_loot_template"
+      }
+    },
+    "SkillDiscoveryTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "skill_discovery_template",
+      "sql_database": "acore_world",
+      "c_struct": "SkillDiscoveryTemplate",
+      "fields": {
+        "0": {
+          "name": "spellId",
+          "type": "int32",
+          "sql_column": "spellId"
+        },
+        "1": {
+          "name": "reqSpell",
+          "type": "int32",
+          "sql_column": "reqSpell"
+        },
+        "2": {
+          "name": "reqSkillValue",
+          "type": "int32",
+          "sql_column": "reqSkillValue"
+        },
+        "3": {
+          "name": "chance",
+          "type": "float",
+          "sql_column": "chance"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: skill_discovery_template. Use lookup_datastore(query='skill_discovery_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM skill_discovery_template"
+      }
+    },
+    "SkillExtraItemTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "skill_extra_item_template",
+      "sql_database": "acore_world",
+      "c_struct": "SkillExtraItemTemplate",
+      "fields": {
+        "0": {
+          "name": "spellId",
+          "type": "int32",
+          "sql_column": "spellId"
+        },
+        "1": {
+          "name": "requiredSpecialization",
+          "type": "int32",
+          "sql_column": "requiredSpecialization"
+        },
+        "2": {
+          "name": "additionalCreateChance",
+          "type": "float",
+          "sql_column": "additionalCreateChance"
+        },
+        "3": {
+          "name": "additionalMaxNum",
+          "type": "int8",
+          "sql_column": "additionalMaxNum"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: skill_extra_item_template. Use lookup_datastore(query='skill_extra_item_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM skill_extra_item_template"
+      }
+    },
+    "SkillFishingBaseLevel": {
+      "category": "sql_auxiliary",
+      "sql_table": "skill_fishing_base_level",
+      "sql_database": "acore_world",
+      "c_struct": "SkillFishingBaseLevel",
+      "fields": {
+        "0": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        },
+        "1": {
+          "name": "skill",
+          "type": "int32",
+          "sql_column": "skill"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: skill_fishing_base_level. Use lookup_datastore(query='skill_fishing_base_level') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM skill_fishing_base_level"
+      }
+    },
+    "SkillPerfectItemTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "skill_perfect_item_template",
+      "sql_database": "acore_world",
+      "c_struct": "SkillPerfectItemTemplate",
+      "fields": {
+        "0": {
+          "name": "spellId",
+          "type": "int32",
+          "sql_column": "spellId"
+        },
+        "1": {
+          "name": "requiredSpecialization",
+          "type": "int32",
+          "sql_column": "requiredSpecialization"
+        },
+        "2": {
+          "name": "perfectCreateChance",
+          "type": "float",
+          "sql_column": "perfectCreateChance"
+        },
+        "3": {
+          "name": "perfectItemType",
+          "type": "int32",
+          "sql_column": "perfectItemType"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: skill_perfect_item_template. Use lookup_datastore(query='skill_perfect_item_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM skill_perfect_item_template"
+      }
+    },
+    "SkinningLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "skinning_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "SkinningLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: skinning_loot_template. Use lookup_datastore(query='skinning_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM skinning_loot_template"
+      }
+    },
+    "SpellCustomAttr": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_custom_attr",
+      "sql_database": "acore_world",
+      "c_struct": "SpellCustomAttr",
+      "fields": {
+        "0": {
+          "name": "spell_id",
+          "type": "int32",
+          "sql_column": "spell_id"
+        },
+        "1": {
+          "name": "attributes",
+          "type": "int32",
+          "sql_column": "attributes"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_custom_attr. Use lookup_datastore(query='spell_custom_attr') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_custom_attr"
+      }
+    },
+    "SpellGroup": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_group",
+      "sql_database": "acore_world",
+      "c_struct": "SpellGroup",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "spell_id",
+          "type": "int32",
+          "sql_column": "spell_id"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_group. Use lookup_datastore(query='spell_group') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_group"
+      }
+    },
+    "SpellGroupStackRules": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_group_stack_rules",
+      "sql_database": "acore_world",
+      "c_struct": "SpellGroupStackRules",
+      "fields": {
+        "0": {
+          "name": "group_id",
+          "type": "int32",
+          "sql_column": "group_id"
+        },
+        "1": {
+          "name": "stack_rule",
+          "type": "int8",
+          "sql_column": "stack_rule"
+        },
+        "2": {
+          "name": "description",
+          "type": "string",
+          "sql_column": "description"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_group_stack_rules. Use lookup_datastore(query='spell_group_stack_rules') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_group_stack_rules"
+      }
+    },
+    "SpellJumpDistance": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_jump_distance",
+      "sql_database": "acore_world",
+      "c_struct": "SpellJumpDistance",
+      "fields": {
+        "0": {
+          "name": "ID",
+          "type": "int32",
+          "sql_column": "ID"
+        },
+        "1": {
+          "name": "JumpDistance",
+          "type": "float",
+          "sql_column": "JumpDistance"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_jump_distance. Use lookup_datastore(query='spell_jump_distance') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_jump_distance"
+      }
+    },
+    "SpellLinkedSpell": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_linked_spell",
+      "sql_database": "acore_world",
+      "c_struct": "SpellLinkedSpell",
+      "fields": {
+        "0": {
+          "name": "spell_trigger",
+          "type": "int32",
+          "sql_column": "spell_trigger"
+        },
+        "1": {
+          "name": "spell_effect",
+          "type": "int32",
+          "sql_column": "spell_effect"
+        },
+        "2": {
+          "name": "type",
+          "type": "int8",
+          "sql_column": "type"
+        },
+        "3": {
+          "name": "comment",
+          "type": "string",
+          "sql_column": "comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_linked_spell. Use lookup_datastore(query='spell_linked_spell') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_linked_spell"
+      }
+    },
+    "SpellLootTemplate": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_loot_template",
+      "sql_database": "acore_world",
+      "c_struct": "SpellLootTemplate",
+      "fields": {
+        "0": {
+          "name": "Entry",
+          "type": "int32",
+          "sql_column": "Entry"
+        },
+        "1": {
+          "name": "Item",
+          "type": "int32",
+          "sql_column": "Item"
+        },
+        "2": {
+          "name": "Reference",
+          "type": "int32",
+          "sql_column": "Reference"
+        },
+        "3": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "4": {
+          "name": "QuestRequired",
+          "type": "int8",
+          "sql_column": "QuestRequired"
+        },
+        "5": {
+          "name": "LootMode",
+          "type": "int32",
+          "sql_column": "LootMode"
+        },
+        "6": {
+          "name": "GroupId",
+          "type": "int8",
+          "sql_column": "GroupId"
+        },
+        "7": {
+          "name": "MinCount",
+          "type": "int8",
+          "sql_column": "MinCount"
+        },
+        "8": {
+          "name": "MaxCount",
+          "type": "int8",
+          "sql_column": "MaxCount"
+        },
+        "9": {
+          "name": "Comment",
+          "type": "string",
+          "sql_column": "Comment"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_loot_template. Use lookup_datastore(query='spell_loot_template') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_loot_template"
+      }
+    },
+    "SpellMixology": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_mixology",
+      "sql_database": "acore_world",
+      "c_struct": "SpellMixology",
+      "fields": {
+        "0": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        },
+        "1": {
+          "name": "pctMod",
+          "type": "float",
+          "sql_column": "pctMod"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_mixology. Use lookup_datastore(query='spell_mixology') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_mixology"
+      }
+    },
+    "SpellProc": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_proc",
+      "sql_database": "acore_world",
+      "c_struct": "SpellProc",
+      "fields": {
+        "0": {
+          "name": "SpellId",
+          "type": "int32",
+          "sql_column": "SpellId"
+        },
+        "1": {
+          "name": "SchoolMask",
+          "type": "int8",
+          "sql_column": "SchoolMask"
+        },
+        "2": {
+          "name": "SpellFamilyName",
+          "type": "int32",
+          "sql_column": "SpellFamilyName"
+        },
+        "3": {
+          "name": "SpellFamilyMask0",
+          "type": "int32",
+          "sql_column": "SpellFamilyMask0"
+        },
+        "4": {
+          "name": "SpellFamilyMask1",
+          "type": "int32",
+          "sql_column": "SpellFamilyMask1"
+        },
+        "5": {
+          "name": "SpellFamilyMask2",
+          "type": "int32",
+          "sql_column": "SpellFamilyMask2"
+        },
+        "6": {
+          "name": "ProcFlags",
+          "type": "int32",
+          "sql_column": "ProcFlags"
+        },
+        "7": {
+          "name": "SpellTypeMask",
+          "type": "int32",
+          "sql_column": "SpellTypeMask"
+        },
+        "8": {
+          "name": "SpellPhaseMask",
+          "type": "int32",
+          "sql_column": "SpellPhaseMask"
+        },
+        "9": {
+          "name": "HitMask",
+          "type": "int32",
+          "sql_column": "HitMask"
+        },
+        "10": {
+          "name": "AttributesMask",
+          "type": "int32",
+          "sql_column": "AttributesMask"
+        },
+        "11": {
+          "name": "DisableEffectsMask",
+          "type": "int32",
+          "sql_column": "DisableEffectsMask"
+        },
+        "12": {
+          "name": "ProcsPerMinute",
+          "type": "float",
+          "sql_column": "ProcsPerMinute"
+        },
+        "13": {
+          "name": "Chance",
+          "type": "float",
+          "sql_column": "Chance"
+        },
+        "14": {
+          "name": "Cooldown",
+          "type": "int32",
+          "sql_column": "Cooldown"
+        },
+        "15": {
+          "name": "Charges",
+          "type": "int8",
+          "sql_column": "Charges"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_proc. Use lookup_datastore(query='spell_proc') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_proc"
+      }
+    },
+    "SpellRanks": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_ranks",
+      "sql_database": "acore_world",
+      "c_struct": "SpellRanks",
+      "fields": {
+        "0": {
+          "name": "first_spell_id",
+          "type": "int32",
+          "sql_column": "first_spell_id"
+        },
+        "1": {
+          "name": "spell_id",
+          "type": "int32",
+          "sql_column": "spell_id"
+        },
+        "2": {
+          "name": "rank",
+          "type": "int8",
+          "sql_column": "rank"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_ranks. Use lookup_datastore(query='spell_ranks') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_ranks"
+      }
+    },
+    "SpellScriptNames": {
+      "category": "sql_auxiliary",
+      "sql_table": "spell_script_names",
+      "sql_database": "acore_world",
+      "c_struct": "SpellScriptNames",
+      "fields": {
+        "0": {
+          "name": "spell_id",
+          "type": "int32",
+          "sql_column": "spell_id"
+        },
+        "1": {
+          "name": "ScriptName",
+          "type": "string",
+          "sql_column": "ScriptName"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: spell_script_names. Use lookup_datastore(query='spell_script_names') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM spell_script_names"
+      }
+    },
+    "Trainer": {
+      "category": "sql_auxiliary",
+      "sql_table": "trainer",
+      "sql_database": "acore_world",
+      "c_struct": "Trainer",
+      "fields": {
+        "0": {
+          "name": "Id",
+          "type": "int32",
+          "sql_column": "Id"
+        },
+        "1": {
+          "name": "Type",
+          "type": "int8",
+          "sql_column": "Type"
+        },
+        "2": {
+          "name": "Requirement",
+          "type": "int32",
+          "sql_column": "Requirement"
+        },
+        "3": {
+          "name": "Greeting",
+          "type": "mediumtext",
+          "sql_column": "Greeting"
+        },
+        "4": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: trainer. Use lookup_datastore(query='trainer') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM trainer"
+      }
+    },
+    "TrainerSpell": {
+      "category": "sql_auxiliary",
+      "sql_table": "trainer_spell",
+      "sql_database": "acore_world",
+      "c_struct": "TrainerSpell",
+      "fields": {
+        "0": {
+          "name": "TrainerId",
+          "type": "int32",
+          "sql_column": "TrainerId"
+        },
+        "1": {
+          "name": "SpellId",
+          "type": "int32",
+          "sql_column": "SpellId"
+        },
+        "2": {
+          "name": "MoneyCost",
+          "type": "int32",
+          "sql_column": "MoneyCost"
+        },
+        "3": {
+          "name": "ReqSkillLine",
+          "type": "int32",
+          "sql_column": "ReqSkillLine"
+        },
+        "4": {
+          "name": "ReqSkillRank",
+          "type": "int32",
+          "sql_column": "ReqSkillRank"
+        },
+        "5": {
+          "name": "ReqAbility1",
+          "type": "int32",
+          "sql_column": "ReqAbility1"
+        },
+        "6": {
+          "name": "ReqAbility2",
+          "type": "int32",
+          "sql_column": "ReqAbility2"
+        },
+        "7": {
+          "name": "ReqAbility3",
+          "type": "int32",
+          "sql_column": "ReqAbility3"
+        },
+        "8": {
+          "name": "ReqLevel",
+          "type": "int8",
+          "sql_column": "ReqLevel"
+        },
+        "9": {
+          "name": "VerifiedBuild",
+          "type": "int32",
+          "sql_column": "VerifiedBuild"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: trainer_spell. Use lookup_datastore(query='trainer_spell') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM trainer_spell"
+      }
+    },
+    "Transports": {
+      "category": "sql_auxiliary",
+      "sql_table": "transports",
+      "sql_database": "acore_world",
+      "c_struct": "Transports",
+      "fields": {
+        "0": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        },
+        "1": {
+          "name": "entry",
+          "type": "int32",
+          "sql_column": "entry"
+        },
+        "2": {
+          "name": "name",
+          "type": "string",
+          "sql_column": "name"
+        },
+        "3": {
+          "name": "ScriptName",
+          "type": "string",
+          "sql_column": "ScriptName"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: transports. Use lookup_datastore(query='transports') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM transports"
+      }
+    },
+    "WaypointData": {
+      "category": "sql_auxiliary",
+      "sql_table": "waypoint_data",
+      "sql_database": "acore_world",
+      "c_struct": "WaypointData",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "point",
+          "type": "int32",
+          "sql_column": "point"
+        },
+        "2": {
+          "name": "position_x",
+          "type": "float",
+          "sql_column": "position_x"
+        },
+        "3": {
+          "name": "position_y",
+          "type": "float",
+          "sql_column": "position_y"
+        },
+        "4": {
+          "name": "position_z",
+          "type": "float",
+          "sql_column": "position_z"
+        },
+        "5": {
+          "name": "orientation",
+          "type": "float",
+          "sql_column": "orientation"
+        },
+        "6": {
+          "name": "velocity",
+          "type": "float",
+          "sql_column": "velocity"
+        },
+        "7": {
+          "name": "delay",
+          "type": "int32",
+          "sql_column": "delay"
+        },
+        "8": {
+          "name": "smoothTransition",
+          "type": "int8",
+          "sql_column": "smoothTransition"
+        },
+        "9": {
+          "name": "move_type",
+          "type": "int32",
+          "sql_column": "move_type"
+        },
+        "10": {
+          "name": "action",
+          "type": "int32",
+          "sql_column": "action"
+        },
+        "11": {
+          "name": "action_chance",
+          "type": "int32",
+          "sql_column": "action_chance"
+        },
+        "12": {
+          "name": "wpguid",
+          "type": "int32",
+          "sql_column": "wpguid"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: waypoint_data. Use lookup_datastore(query='waypoint_data') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM waypoint_data"
+      }
+    },
+    "WaypointDataAddon": {
+      "category": "sql_auxiliary",
+      "sql_table": "waypoint_data_addon",
+      "sql_database": "acore_world",
+      "c_struct": "WaypointDataAddon",
+      "fields": {
+        "0": {
+          "name": "PathID",
+          "type": "int32",
+          "sql_column": "PathID"
+        },
+        "1": {
+          "name": "PointID",
+          "type": "int32",
+          "sql_column": "PointID"
+        },
+        "2": {
+          "name": "SplinePointIndex",
+          "type": "int32",
+          "sql_column": "SplinePointIndex"
+        },
+        "3": {
+          "name": "PositionX",
+          "type": "float",
+          "sql_column": "PositionX"
+        },
+        "4": {
+          "name": "PositionY",
+          "type": "float",
+          "sql_column": "PositionY"
+        },
+        "5": {
+          "name": "PositionZ",
+          "type": "float",
+          "sql_column": "PositionZ"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: waypoint_data_addon. Use lookup_datastore(query='waypoint_data_addon') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM waypoint_data_addon"
+      }
+    },
+    "WaypointScripts": {
+      "category": "sql_auxiliary",
+      "sql_table": "waypoint_scripts",
+      "sql_database": "acore_world",
+      "c_struct": "WaypointScripts",
+      "fields": {
+        "0": {
+          "name": "id",
+          "type": "int32",
+          "sql_column": "id"
+        },
+        "1": {
+          "name": "delay",
+          "type": "int32",
+          "sql_column": "delay"
+        },
+        "2": {
+          "name": "command",
+          "type": "int32",
+          "sql_column": "command"
+        },
+        "3": {
+          "name": "datalong",
+          "type": "int32",
+          "sql_column": "datalong"
+        },
+        "4": {
+          "name": "datalong2",
+          "type": "int32",
+          "sql_column": "datalong2"
+        },
+        "5": {
+          "name": "dataint",
+          "type": "int32",
+          "sql_column": "dataint"
+        },
+        "6": {
+          "name": "x",
+          "type": "float",
+          "sql_column": "x"
+        },
+        "7": {
+          "name": "y",
+          "type": "float",
+          "sql_column": "y"
+        },
+        "8": {
+          "name": "z",
+          "type": "float",
+          "sql_column": "z"
+        },
+        "9": {
+          "name": "o",
+          "type": "float",
+          "sql_column": "o"
+        },
+        "10": {
+          "name": "guid",
+          "type": "int32",
+          "sql_column": "guid"
+        }
+      },
+      "loader_function": "",
+      "store_variable": "",
+      "header_file": "",
+      "container_type": "",
+      "hints": {
+        "loading": "Supplementary table: waypoint_scripts. Use lookup_datastore(query='waypoint_scripts') to get column schema.",
+        "access_pattern": "Direct SQL query: SELECT * FROM waypoint_scripts"
+      }
     }
   },
   "indices": {
@@ -15429,7 +19114,7 @@
       "playercreateinfo": "PlayerInfo",
       "pet_levelstats": "PetLevelInfo",
       "npc_spellclick_spells": "SpellClickInfo",
-      "vehicle_template_accessory": "VehicleAccessory",
+      "vehicle_accessory": "VehicleAccessory",
       "vehicle_seat_addon": "VehicleSeatAddon",
       "game_tele": "GameTele",
       "mail_level_reward": "MailLevelReward",
@@ -15496,7 +19181,91 @@
       "calendar_invites": "CalendarInvite",
       "auctionhouse": "AuctionEntry",
       "addons": "SavedAddons",
-      "banned_addons": "BannedAddons"
+      "banned_addons": "BannedAddons",
+      "arena_season_reward": "ArenaSeasonReward",
+      "arena_season_reward_group": "ArenaSeasonRewardGroup",
+      "auctionhousebot_professionItems": "AuctionhousebotProfessionitems",
+      "battlemaster_entry": "BattlemasterEntry",
+      "creature_default_trainer": "CreatureDefaultTrainer",
+      "creature_loot_template": "CreatureLootTemplate",
+      "creature_questender": "CreatureQuestender",
+      "creature_template_addon": "CreatureTemplateAddon",
+      "creature_template_model": "CreatureTemplateModel",
+      "creature_template_movement": "CreatureTemplateMovement",
+      "creature_template_resistance": "CreatureTemplateResistance",
+      "creature_template_spell": "CreatureTemplateSpell",
+      "disenchant_loot_template": "DisenchantLootTemplate",
+      "dungeon_access_requirements": "DungeonAccessRequirements",
+      "fishing_loot_template": "FishingLootTemplate",
+      "game_event_arena_seasons": "GameEventArenaSeasons",
+      "game_event_battleground_holiday": "GameEventBattlegroundHoliday",
+      "game_event_creature": "GameEventCreature",
+      "game_event_creature_quest": "GameEventCreatureQuest",
+      "game_event_gameobject": "GameEventGameobject",
+      "game_event_gameobject_quest": "GameEventGameobjectQuest",
+      "game_event_npcflag": "GameEventNpcflag",
+      "game_event_pool": "GameEventPool",
+      "game_event_prerequisite": "GameEventPrerequisite",
+      "game_event_quest_condition": "GameEventQuestCondition",
+      "game_event_seasonal_questrelation": "GameEventSeasonalQuestrelation",
+      "game_graveyard": "GameGraveyard",
+      "gameobject_loot_template": "GameobjectLootTemplate",
+      "gameobject_questender": "GameobjectQuestender",
+      "gameobject_queststarter": "GameobjectQueststarter",
+      "graveyard_zone": "GraveyardZone",
+      "item_loot_template": "ItemLootTemplate",
+      "lfg_dungeon_template": "LfgDungeonTemplate",
+      "mail_loot_template": "MailLootTemplate",
+      "milling_loot_template": "MillingLootTemplate",
+      "npc_trainer": "NpcTrainer",
+      "pickpocketing_loot_template": "PickpocketingLootTemplate",
+      "player_class_stats": "PlayerClassStats",
+      "player_factionchange_achievement": "PlayerFactionchangeAchievement",
+      "player_factionchange_items": "PlayerFactionchangeItems",
+      "player_factionchange_quests": "PlayerFactionchangeQuests",
+      "player_factionchange_reputations": "PlayerFactionchangeReputations",
+      "player_factionchange_spells": "PlayerFactionchangeSpells",
+      "player_factionchange_titles": "PlayerFactionchangeTitles",
+      "player_loot_template": "PlayerLootTemplate",
+      "player_race_stats": "PlayerRaceStats",
+      "playercreateinfo_action": "PlayercreateinfoAction",
+      "playercreateinfo_cast_spell": "PlayercreateinfoCastSpell",
+      "playercreateinfo_item": "PlayercreateinfoItem",
+      "playercreateinfo_skills": "PlayercreateinfoSkills",
+      "playercreateinfo_spell_custom": "PlayercreateinfoSpellCustom",
+      "pool_creature": "PoolCreature",
+      "pool_gameobject": "PoolGameobject",
+      "pool_pool": "PoolPool",
+      "pool_quest": "PoolQuest",
+      "prospecting_loot_template": "ProspectingLootTemplate",
+      "quest_details": "QuestDetails",
+      "quest_mail_sender": "QuestMailSender",
+      "quest_offer_reward": "QuestOfferReward",
+      "quest_poi_points": "QuestPoiPoints",
+      "quest_request_items": "QuestRequestItems",
+      "quest_template_addon": "QuestTemplateAddon",
+      "reference_loot_template": "ReferenceLootTemplate",
+      "skill_discovery_template": "SkillDiscoveryTemplate",
+      "skill_extra_item_template": "SkillExtraItemTemplate",
+      "skill_fishing_base_level": "SkillFishingBaseLevel",
+      "skill_perfect_item_template": "SkillPerfectItemTemplate",
+      "skinning_loot_template": "SkinningLootTemplate",
+      "spell_custom_attr": "SpellCustomAttr",
+      "spell_group": "SpellGroup",
+      "spell_group_stack_rules": "SpellGroupStackRules",
+      "spell_jump_distance": "SpellJumpDistance",
+      "spell_linked_spell": "SpellLinkedSpell",
+      "spell_loot_template": "SpellLootTemplate",
+      "spell_mixology": "SpellMixology",
+      "spell_proc": "SpellProc",
+      "spell_ranks": "SpellRanks",
+      "spell_script_names": "SpellScriptNames",
+      "trainer": "Trainer",
+      "trainer_spell": "TrainerSpell",
+      "transports": "Transports",
+      "waypoint_data": "WaypointData",
+      "waypoint_data_addon": "WaypointDataAddon",
+      "waypoint_scripts": "WaypointScripts"
     },
     "by_dbc_file": {
       "Achievement.dbc": "AchievementEntry",
@@ -15937,6 +19706,316 @@
       "CalendarEventInviteStore": "CalendarInvite",
       "std::list<SavedAddon>": "SavedAddons",
       "std::list<BannedAddon>": "BannedAddons"
+    },
+    "by_c_struct": {
+      "AchievementEntry": "AchievementEntry",
+      "AchievementCategoryEntry": "AchievementCategoryEntry",
+      "AchievementCriteriaEntry": "AchievementCriteriaEntry",
+      "AreaTableEntry": "AreaTableEntry",
+      "AreaGroupEntry": "AreaGroupEntry",
+      "AreaPOIEntry": "AreaPOIEntry",
+      "AuctionHouseEntry": "AuctionHouseEntry",
+      "BankBagSlotPricesEntry": "BankBagSlotPricesEntry",
+      "BarberShopStyleEntry": "BarberShopStyleEntry",
+      "BattlemasterListEntry": "BattlemasterListEntry",
+      "CharStartOutfitEntry": "CharStartOutfitEntry",
+      "CharSectionsEntry": "CharSectionsEntry",
+      "CharTitlesEntry": "CharTitlesEntry",
+      "ChatChannelsEntry": "ChatChannelsEntry",
+      "ChrClassesEntry": "ChrClassesEntry",
+      "ChrRacesEntry": "ChrRacesEntry",
+      "CinematicCameraEntry": "CinematicCameraEntry",
+      "CinematicSequencesEntry": "CinematicSequencesEntry",
+      "CreatureDisplayInfoEntry": "CreatureDisplayInfoEntry",
+      "CreatureDisplayInfoExtraEntry": "CreatureDisplayInfoExtraEntry",
+      "CreatureFamilyEntry": "CreatureFamilyEntry",
+      "CreatureModelDataEntry": "CreatureModelDataEntry",
+      "CreatureSpellDataEntry": "CreatureSpellDataEntry",
+      "CreatureTypeEntry": "CreatureTypeEntry",
+      "CurrencyTypesEntry": "CurrencyTypesEntry",
+      "DestructibleModelDataEntry": "DestructibleModelDataEntry",
+      "DungeonEncounterEntry": "DungeonEncounterEntry",
+      "DurabilityCostsEntry": "DurabilityCostsEntry",
+      "DurabilityQualityEntry": "DurabilityQualityEntry",
+      "EmotesEntry": "EmotesEntry",
+      "EmotesTextEntry": "EmotesTextEntry",
+      "EmotesTextSoundEntry": "EmotesTextSoundEntry",
+      "FactionEntry": "FactionEntry",
+      "FactionTemplateEntry": "FactionTemplateEntry",
+      "GameObjectArtKitEntry": "GameObjectArtKitEntry",
+      "GameObjectDisplayInfoEntry": "GameObjectDisplayInfoEntry",
+      "GemPropertiesEntry": "GemPropertiesEntry",
+      "GlyphPropertiesEntry": "GlyphPropertiesEntry",
+      "GlyphSlotEntry": "GlyphSlotEntry",
+      "GtBarberShopCostBaseEntry": "GtBarberShopCostBaseEntry",
+      "GtCombatRatingsEntry": "GtCombatRatingsEntry",
+      "GtChanceToMeleeCritBaseEntry": "GtChanceToMeleeCritBaseEntry",
+      "GtChanceToMeleeCritEntry": "GtChanceToMeleeCritEntry",
+      "GtChanceToSpellCritBaseEntry": "GtChanceToSpellCritBaseEntry",
+      "GtChanceToSpellCritEntry": "GtChanceToSpellCritEntry",
+      "GtNPCManaCostScalerEntry": "GtNPCManaCostScalerEntry",
+      "GtOCTClassCombatRatingScalarEntry": "GtOCTClassCombatRatingScalarEntry",
+      "GtOCTRegenHPEntry": "GtOCTRegenHPEntry",
+      "GtRegenHPPerSptEntry": "GtRegenHPPerSptEntry",
+      "GtRegenMPPerSptEntry": "GtRegenMPPerSptEntry",
+      "HolidaysEntry": "HolidaysEntry",
+      "ItemEntry": "ItemEntry",
+      "ItemBagFamilyEntry": "ItemBagFamilyEntry",
+      "ItemDisplayInfoEntry": "ItemDisplayInfoEntry",
+      "ItemExtendedCostEntry": "ItemExtendedCostEntry",
+      "ItemLimitCategoryEntry": "ItemLimitCategoryEntry",
+      "ItemRandomPropertiesEntry": "ItemRandomPropertiesEntry",
+      "ItemRandomSuffixEntry": "ItemRandomSuffixEntry",
+      "ItemSetEntry": "ItemSetEntry",
+      "LFGDungeonEntry": "LFGDungeonEntry",
+      "LightEntry": "LightEntry",
+      "LiquidTypeEntry": "LiquidTypeEntry",
+      "LockEntry": "LockEntry",
+      "MailTemplateEntry": "MailTemplateEntry",
+      "MapEntry": "MapEntry",
+      "MapDifficultyEntry": "MapDifficultyEntry",
+      "MovieEntry": "MovieEntry",
+      "NamesReservedEntry": "NamesReservedEntry",
+      "NamesProfanityEntry": "NamesProfanityEntry",
+      "OverrideSpellDataEntry": "OverrideSpellDataEntry",
+      "PowerDisplayEntry": "PowerDisplayEntry",
+      "PvPDifficultyEntry": "PvPDifficultyEntry",
+      "QuestSortEntry": "QuestSortEntry",
+      "QuestXPEntry": "QuestXPEntry",
+      "QuestFactionRewEntry": "QuestFactionRewEntry",
+      "RandomPropertiesPointsEntry": "RandomPropertiesPointsEntry",
+      "ScalingStatDistributionEntry": "ScalingStatDistributionEntry",
+      "ScalingStatValuesEntry": "ScalingStatValuesEntry",
+      "SkillLineEntry": "SkillLineEntry",
+      "SkillLineAbilityEntry": "SkillLineAbilityEntry",
+      "SkillRaceClassInfoEntry": "SkillRaceClassInfoEntry",
+      "SkillTiersEntry": "SkillTiersEntry",
+      "SoundEntriesEntry": "SoundEntriesEntry",
+      "SpellEntry": "SpellEntry",
+      "SpellCastTimesEntry": "SpellCastTimesEntry",
+      "SpellCategoryEntry": "SpellCategoryEntry",
+      "SpellDifficultyEntry": "SpellDifficultyEntry",
+      "SpellDurationEntry": "SpellDurationEntry",
+      "SpellFocusObjectEntry": "SpellFocusObjectEntry",
+      "SpellItemEnchantmentEntry": "SpellItemEnchantmentEntry",
+      "SpellItemEnchantmentConditionEntry": "SpellItemEnchantmentConditionEntry",
+      "SpellRadiusEntry": "SpellRadiusEntry",
+      "SpellRangeEntry": "SpellRangeEntry",
+      "SpellRuneCostEntry": "SpellRuneCostEntry",
+      "SpellShapeshiftFormEntry": "SpellShapeshiftFormEntry",
+      "SpellVisualEntry": "SpellVisualEntry",
+      "StableSlotPricesEntry": "StableSlotPricesEntry",
+      "SummonPropertiesEntry": "SummonPropertiesEntry",
+      "TalentEntry": "TalentEntry",
+      "TalentTabEntry": "TalentTabEntry",
+      "TaxiNodesEntry": "TaxiNodesEntry",
+      "TaxiPathEntry": "TaxiPathEntry",
+      "TaxiPathNodeEntry": "TaxiPathNodeEntry",
+      "TeamContributionPointsEntry": "TeamContributionPointsEntry",
+      "TotemCategoryEntry": "TotemCategoryEntry",
+      "TransportAnimationEntry": "TransportAnimationEntry",
+      "TransportRotationEntry": "TransportRotationEntry",
+      "VehicleEntry": "VehicleEntry",
+      "VehicleSeatEntry": "VehicleSeatEntry",
+      "WMOAreaTableEntry": "WMOAreaTableEntry",
+      "WorldMapAreaEntry": "WorldMapAreaEntry",
+      "WorldMapOverlayEntry": "WorldMapOverlayEntry",
+      "CreatureTemplate": "CreatureTemplate",
+      "CreatureBaseStats": "CreatureBaseStats",
+      "CreatureData": "CreatureData",
+      "CreatureAddon": "CreatureAddon",
+      "CreatureModelInfo": "CreatureModelInfo",
+      "EquipmentInfo": "EquipmentInfo",
+      "VendorItem": "VendorItem",
+      "GameObjectTemplate": "GameObjectTemplate",
+      "GameObjectTemplateAddon": "GameObjectTemplateAddon",
+      "GameObjectData": "GameObjectData",
+      "GameObjectAddon": "GameObjectAddon",
+      "ItemTemplate": "ItemTemplate",
+      "ItemSetNameEntry": "ItemSetNameEntry",
+      "Quest": "Quest",
+      "QuestMoneyRewardArray": "QuestMoneyRewardArray",
+      "QuestPOI": "QuestPOI",
+      "QuestAreaTrigger": "QuestAreaTrigger",
+      "QuestGreeting": "QuestGreeting",
+      "QuestRelations": "QuestRelations",
+      "PageText": "PageText",
+      "GossipText": "GossipText",
+      "GossipMenus": "GossipMenus",
+      "GossipMenuItems": "GossipMenuItems",
+      "BroadcastText": "BroadcastText",
+      "PointOfInterest": "PointOfInterest",
+      "AreaTrigger": "AreaTrigger",
+      "AreaTriggerTeleport": "AreaTriggerTeleport",
+      "InstanceTemplate": "InstanceTemplate",
+      "DungeonEncounter": "DungeonEncounter",
+      "DungeonProgressionRequirements": "DungeonProgressionRequirements",
+      "ScriptInfo": "ScriptInfo",
+      "RepRewardRate": "RepRewardRate",
+      "ReputationOnKillEntry": "ReputationOnKillEntry",
+      "RepSpilloverTemplate": "RepSpilloverTemplate",
+      "PlayerInfo": "PlayerInfo",
+      "PetLevelInfo": "PetLevelInfo",
+      "SpellClickInfo": "SpellClickInfo",
+      "VehicleAccessory": "VehicleAccessory",
+      "VehicleSeatAddon": "VehicleSeatAddon",
+      "GameTele": "GameTele",
+      "MailLevelReward": "MailLevelReward",
+      "TempSummonData": "TempSummonData",
+      "LinkedRespawn": "LinkedRespawn",
+      "AcoreString": "AcoreString",
+      "ModuleString": "ModuleString",
+      "TavernAreaTrigger": "TavernAreaTrigger",
+      "AreaTriggerScript": "AreaTriggerScript",
+      "CreatureSparring": "CreatureSparring",
+      "ExplorationBaseXP": "ExplorationBaseXP",
+      "PlayerXPperLevel": "PlayerXPperLevel",
+      "PetNameGeneration": "PetNameGeneration",
+      "CreatureCustomIDs": "CreatureCustomIDs",
+      "CreatureMovementData": "CreatureMovementData",
+      "GameObjectQuestItem": "GameObjectQuestItem",
+      "CreatureQuestItem": "CreatureQuestItem",
+      "GameObjectSummonData": "GameObjectSummonData",
+      "SpawnGroupTemplateData": "SpawnGroupTemplateData",
+      "PlayerTotemModel": "PlayerTotemModel",
+      "PlayerShapeshiftModel": "PlayerShapeshiftModel",
+      "ScriptNameStore": "ScriptNameStore",
+      "CellObjectGuids": "CellObjectGuids",
+      "SpellProcEntry": "SpellProcEntry",
+      "SpellEnchantProcEntry": "SpellEnchantProcEntry",
+      "SpellBonusEntry": "SpellBonusEntry",
+      "SpellThreatEntry": "SpellThreatEntry",
+      "SpellTargetPosition": "SpellTargetPosition",
+      "PetAura": "PetAura",
+      "SpellArea": "SpellArea",
+      "SpellRequired": "SpellRequired",
+      "SpellCooldownOverride": "SpellCooldownOverride",
+      "CreatureImmunities": "CreatureImmunities",
+      "LootStoreItem": "LootStoreItem",
+      "SmartScriptHolder": "SmartScriptHolder",
+      "Condition": "Condition",
+      "GameEventData": "GameEventData",
+      "GameEventFinishCondition": "GameEventFinishCondition",
+      "ModelEquip": "ModelEquip",
+      "NPCVendorEntry": "NPCVendorEntry",
+      "PoolTemplateData": "PoolTemplateData",
+      "WaypointPath": "WaypointPath",
+      "AchievementCriteriaData": "AchievementCriteriaData",
+      "AchievementReward": "AchievementReward",
+      "AchievementRewardLocale": "AchievementRewardLocale",
+      "LfgReward": "LfgReward",
+      "BattlegroundTemplate": "BattlegroundTemplate",
+      "DisableData": "DisableData",
+      "FormationInfo": "FormationInfo",
+      "CreatureTextEntry": "CreatureTextEntry",
+      "CreatureTextLocale": "CreatureTextLocale",
+      "WardenCheck": "WardenCheck",
+      "WardenCheckResult": "WardenCheckResult",
+      "WeatherData": "WeatherData",
+      "OutdoorPvPData": "OutdoorPvPData",
+      "RandomEnchantmentData": "RandomEnchantmentData",
+      "GmTicket": "GmTicket",
+      "gm_survey": "gm_survey",
+      "Petition": "Petition",
+      "Signatures": "Signatures",
+      "InstanceSave": "InstanceSave",
+      "ResetTimes": "ResetTimes",
+      "CharacterBinds": "CharacterBinds",
+      "GroupData": "GroupData",
+      "GroupMembers": "GroupMembers",
+      "LFGData": "LFGData",
+      "Guild": "Guild",
+      "ArenaTeam": "ArenaTeam",
+      "ArenaTeamMembers": "ArenaTeamMembers",
+      "CalendarEvent": "CalendarEvent",
+      "CalendarInvite": "CalendarInvite",
+      "AuctionEntry": "AuctionEntry",
+      "SavedAddons": "SavedAddons",
+      "BannedAddons": "BannedAddons",
+      "ArenaSeasonReward": "ArenaSeasonReward",
+      "ArenaSeasonRewardGroup": "ArenaSeasonRewardGroup",
+      "AuctionhousebotProfessionitems": "AuctionhousebotProfessionitems",
+      "BattlemasterEntry": "BattlemasterEntry",
+      "CreatureDefaultTrainer": "CreatureDefaultTrainer",
+      "CreatureLootTemplate": "CreatureLootTemplate",
+      "CreatureQuestender": "CreatureQuestender",
+      "CreatureTemplateAddon": "CreatureTemplateAddon",
+      "CreatureTemplateModel": "CreatureTemplateModel",
+      "CreatureTemplateMovement": "CreatureTemplateMovement",
+      "CreatureTemplateResistance": "CreatureTemplateResistance",
+      "CreatureTemplateSpell": "CreatureTemplateSpell",
+      "DisenchantLootTemplate": "DisenchantLootTemplate",
+      "DungeonAccessRequirements": "DungeonAccessRequirements",
+      "FishingLootTemplate": "FishingLootTemplate",
+      "GameEventArenaSeasons": "GameEventArenaSeasons",
+      "GameEventBattlegroundHoliday": "GameEventBattlegroundHoliday",
+      "GameEventCreature": "GameEventCreature",
+      "GameEventCreatureQuest": "GameEventCreatureQuest",
+      "GameEventGameobject": "GameEventGameobject",
+      "GameEventGameobjectQuest": "GameEventGameobjectQuest",
+      "GameEventNpcflag": "GameEventNpcflag",
+      "GameEventPool": "GameEventPool",
+      "GameEventPrerequisite": "GameEventPrerequisite",
+      "GameEventQuestCondition": "GameEventQuestCondition",
+      "GameEventSeasonalQuestrelation": "GameEventSeasonalQuestrelation",
+      "GameGraveyard": "GameGraveyard",
+      "GameobjectLootTemplate": "GameobjectLootTemplate",
+      "GameobjectQuestender": "GameobjectQuestender",
+      "GameobjectQueststarter": "GameobjectQueststarter",
+      "GraveyardZone": "GraveyardZone",
+      "ItemLootTemplate": "ItemLootTemplate",
+      "LfgDungeonTemplate": "LfgDungeonTemplate",
+      "MailLootTemplate": "MailLootTemplate",
+      "MillingLootTemplate": "MillingLootTemplate",
+      "NpcTrainer": "NpcTrainer",
+      "PickpocketingLootTemplate": "PickpocketingLootTemplate",
+      "PlayerClassStats": "PlayerClassStats",
+      "PlayerFactionchangeAchievement": "PlayerFactionchangeAchievement",
+      "PlayerFactionchangeItems": "PlayerFactionchangeItems",
+      "PlayerFactionchangeQuests": "PlayerFactionchangeQuests",
+      "PlayerFactionchangeReputations": "PlayerFactionchangeReputations",
+      "PlayerFactionchangeSpells": "PlayerFactionchangeSpells",
+      "PlayerFactionchangeTitles": "PlayerFactionchangeTitles",
+      "PlayerLootTemplate": "PlayerLootTemplate",
+      "PlayerRaceStats": "PlayerRaceStats",
+      "PlayercreateinfoAction": "PlayercreateinfoAction",
+      "PlayercreateinfoCastSpell": "PlayercreateinfoCastSpell",
+      "PlayercreateinfoItem": "PlayercreateinfoItem",
+      "PlayercreateinfoSkills": "PlayercreateinfoSkills",
+      "PlayercreateinfoSpellCustom": "PlayercreateinfoSpellCustom",
+      "PoolCreature": "PoolCreature",
+      "PoolGameobject": "PoolGameobject",
+      "PoolPool": "PoolPool",
+      "PoolQuest": "PoolQuest",
+      "ProspectingLootTemplate": "ProspectingLootTemplate",
+      "QuestDetails": "QuestDetails",
+      "QuestMailSender": "QuestMailSender",
+      "QuestOfferReward": "QuestOfferReward",
+      "QuestPoiPoints": "QuestPoiPoints",
+      "QuestRequestItems": "QuestRequestItems",
+      "QuestTemplateAddon": "QuestTemplateAddon",
+      "ReferenceLootTemplate": "ReferenceLootTemplate",
+      "SkillDiscoveryTemplate": "SkillDiscoveryTemplate",
+      "SkillExtraItemTemplate": "SkillExtraItemTemplate",
+      "SkillFishingBaseLevel": "SkillFishingBaseLevel",
+      "SkillPerfectItemTemplate": "SkillPerfectItemTemplate",
+      "SkinningLootTemplate": "SkinningLootTemplate",
+      "SpellCustomAttr": "SpellCustomAttr",
+      "SpellGroup": "SpellGroup",
+      "SpellGroupStackRules": "SpellGroupStackRules",
+      "SpellJumpDistance": "SpellJumpDistance",
+      "SpellLinkedSpell": "SpellLinkedSpell",
+      "SpellLootTemplate": "SpellLootTemplate",
+      "SpellMixology": "SpellMixology",
+      "SpellProc": "SpellProc",
+      "SpellRanks": "SpellRanks",
+      "SpellScriptNames": "SpellScriptNames",
+      "Trainer": "Trainer",
+      "TrainerSpell": "TrainerSpell",
+      "Transports": "Transports",
+      "WaypointData": "WaypointData",
+      "WaypointDataAddon": "WaypointDataAddon",
+      "WaypointScripts": "WaypointScripts"
     }
   }
 }
