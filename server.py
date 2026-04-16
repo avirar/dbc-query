@@ -88,6 +88,30 @@ class DBCQueryMCP:
 
         return None
 
+    def _suggest_alternative(self, name: str) -> Optional[str]:
+        """Build a suggestion string when a name isn't found in DBC files."""
+        resolved = self._resolve_entry(name)
+        if not resolved:
+            return None
+
+        struct_name, entry = resolved
+        category = entry.get("category", "")
+        sql_table = entry.get("sql_table", "")
+        dbc_file = entry.get("dbc_name", "")
+
+        parts = [f"'{name}' is not a DBC file."]
+        if category == "sql_objectmgr":
+            parts.append(f"It is a SQL ObjectMgr store (table: {sql_table}).")
+            parts.append(f"Use query_game_data(dbc_name='{name}') to query it, or lookup_datastore(query='{name}') for metadata.")
+        elif category == "sql_manager":
+            mgr = entry.get("manager_singleton", "")
+            parts.append(f"It is a SQL Manager store (table: {sql_table}, manager: {mgr}).")
+            parts.append(f"Use query_game_data(dbc_name='{name}') to query it, or lookup_datastore(query='{name}') for metadata.")
+        elif category == "dbc_backed":
+            parts.append(f"It is DBC-backed ({dbc_file}.dbc, SQL overlay: {sql_table}).")
+            parts.append(f"Use query_game_data(dbc_name='{dbc_file}') for merged DBC+SQL data.")
+        return " ".join(parts)
+
     def _load_dbc(self, dbc_name: str) -> WDBCReader:
         if dbc_name in self.dbc_cache:
             return self.dbc_cache[dbc_name]
@@ -159,7 +183,7 @@ class DBCQueryMCP:
         return [
             {
                 "name": "query_dbc",
-                "description": "Query World of Warcraft DBC files. Can retrieve specific records by ID or row index, filter records by field values, and select specific columns.",
+                "description": "Query World of Warcraft DBC binary files ONLY. For SQL-only datastores (quest_template, creature_template, smart_scripts, etc.), use query_game_data instead. Can retrieve specific records by ID or row index, filter records by field values, and select specific columns.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -199,7 +223,7 @@ class DBCQueryMCP:
             },
             {
                 "name": "list_dbcs",
-                "description": "List all available DBC files and their formats",
+                "description": "List available DBC binary files and their formats. DBC files only — does NOT include SQL-only tables like quest_template, creature_template, etc. Use list_stores to see all datastores including SQL tables.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -212,13 +236,13 @@ class DBCQueryMCP:
             },
             {
                 "name": "describe_fields",
-                "description": "Get field names, types, and descriptions for a DBC file. Returns field mappings extracted from AzerothCore source code, making it easy to understand what each field index represents.",
+                "description": "Get field names, types, and descriptions for a DBC-backed datastore. Works for DBC files like Spell, Item, AreaTable. For SQL-only datastores (quest_template, creature_template), use lookup_datastore to get field info. Returns field mappings from AzerothCore source code.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "dbc_name": {
                             "type": "string",
-                            "description": "Name of the DBC file (without .dbc extension). Examples: 'Spell', 'SkillLineAbility', 'Item'"
+                            "description": "Name of the DBC file or datastore (without .dbc extension). Examples: 'Spell', 'SkillLineAbility', 'Item'. For SQL tables, try lookup_datastore instead."
                         }
                     },
                     "required": ["dbc_name"]
@@ -226,13 +250,13 @@ class DBCQueryMCP:
             },
             {
                 "name": "query_game_data",
-                "description": "Unified game data query that combines DBC files and database tables, mimicking AzerothCore's server loading behavior. Queries DBC file first, then checks database table for overlays/overrides. Returns data with metadata about the source. Use this for reliable, server-accurate data.",
+                "description": "Unified game data query for ALL AzerothCore datastores: DBC binary files with SQL overlays, SQL ObjectMgr tables (quest_template, creature_template, item_template, etc.), and SQL Manager tables (spell_proc_event, smart_scripts, conditions, etc.). Use this as the primary query tool — it handles all datastore types. Use lookup_datastore first if unsure which name to use.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "dbc_name": {
                             "type": "string",
-                            "description": "Name of the DBC/data source (without .dbc extension). Examples: 'Spell', 'Achievement_Category', 'LFGDungeons'"
+                            "description": "Name of the datastore. Can be a DBC name ('Spell'), SQL table name ('quest_template', 'creature_template', 'smart_scripts'), or C++ struct name ('SpellEntry'). Use lookup_datastore to find the correct name."
                         },
                         "id": {
                             "type": "number",
@@ -244,13 +268,13 @@ class DBCQueryMCP:
                         },
                         "filter": {
                             "type": "object",
-                            "description": "Filter records by field values. Keys are field indices (as strings), values are the values to match.",
+                            "description": "Filter records by field values. For DBC stores, keys are field indices (as strings). For SQL stores, keys are column names. Example: {'2': 2567} for DBC, {'QuestID': 3904} for SQL.",
                             "additionalProperties": True
                         },
                         "columns": {
                             "type": "array",
                             "items": {"type": "number"},
-                            "description": "Select specific field indices to return. If omitted, all fields are returned."
+                            "description": "Select specific field indices to return (DBC stores only). If omitted, all fields are returned."
                         },
                         "limit": {
                             "type": "number",
@@ -276,7 +300,7 @@ class DBCQueryMCP:
             },
             {
                 "name": "execute_sql",
-                "description": "Execute a SQL query on the AzerothCore database (acore_world by default). Use for querying SQL-only stores like creature_template, item_template, quest_template, spell_proc_event, smart_scripts, conditions, etc.",
+                "description": "Execute a SQL query on the AzerothCore database (acore_world by default). Use for querying SQL-only stores like creature_template, item_template, quest_template, spell_proc_event, smart_scripts, conditions, etc. Prefer query_game_data for simple lookups — use this for complex joins or aggregations.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -336,7 +360,11 @@ class DBCQueryMCP:
         try:
             reader = self._load_dbc(dbc_name)
         except (ValueError, FileNotFoundError) as e:
-            return {"error": str(e), "isError": True}
+            suggestion = self._suggest_alternative(dbc_name)
+            error = str(e)
+            if suggestion:
+                error += f" {suggestion}"
+            return {"error": error, "isError": True}
 
         if args.get("info"):
             return {"result": reader.get_info()}
@@ -385,7 +413,7 @@ class DBCQueryMCP:
 
         dbc_files = sorted([f.stem for f in self.dbc_path.glob("*.dbc")])
 
-        result = []
+        result_list = []
         for name in available:
             fmt = self.format_parser.get_format(name)
             field_count = len(fmt) if fmt else 0
@@ -404,7 +432,7 @@ class DBCQueryMCP:
                     sql_table = entry.get("sql_table", "")
                     break
 
-            result.append({
+            result_list.append({
                 "name": name,
                 "format": fmt[:60] + "..." if len(fmt) > 60 else fmt,
                 "field_count": field_count,
@@ -413,7 +441,12 @@ class DBCQueryMCP:
                 "sql_overlay": sql_table
             })
 
-        return {"result": result, "count": len(result)}
+        resp = {"result": result_list, "count": len(result_list)}
+
+        if search and not result_list:
+            resp["hint"] = f"No DBC files match '{search}'. Use list_stores(search='{search}') to search all datastores including SQL tables."
+
+        return resp
 
     def _describe_fields(self, args: Dict[str, Any]) -> Dict[str, Any]:
         dbc_name = args.get("dbc_name")
@@ -422,7 +455,13 @@ class DBCQueryMCP:
 
         format_string = self.format_parser.get_format(dbc_name)
         if not format_string:
-            return {"error": f"No format found for DBC: {dbc_name}", "isError": True}
+            suggestion = self._suggest_alternative(dbc_name)
+            error = f"No format found for DBC: {dbc_name}."
+            if suggestion:
+                error += f" {suggestion}"
+            else:
+                error += " Use list_stores(search='<name>') to find available datastores."
+            return {"error": error, "isError": True}
 
         # Look up in registry for enriched info
         resolved = self._resolve_entry(dbc_name)
@@ -566,8 +605,20 @@ class DBCQueryMCP:
         sql_db = reg_entry.get("sql_database", "acore_world")
         sql = f"SELECT * FROM {sql_table}"
 
+        where_clauses = []
         if "id" in args:
-            sql += f" WHERE entry = {args['id']}"
+            pk_col = self._find_primary_key(reg_entry)
+            where_clauses.append(f"{pk_col} = {args['id']}")
+
+        if "filter" in args:
+            for col, val in args["filter"].items():
+                if isinstance(val, str):
+                    where_clauses.append(f"{col} = '{val}'")
+                else:
+                    where_clauses.append(f"{col} = {val}")
+
+        if where_clauses:
+            sql += " WHERE " + " AND ".join(where_clauses)
         sql += f" LIMIT {args.get('limit', 100)}"
 
         rows, db_error = self._query_database(sql, sql_db)
@@ -587,6 +638,13 @@ class DBCQueryMCP:
             metadata["access_pattern"] = f"{mgr}->Get{reg_entry.get('c_struct', '')}Data()"
 
         return {"result": rows or [], "count": len(rows or []), "metadata": metadata}
+
+    def _find_primary_key(self, reg_entry: Dict) -> str:
+        """Try to determine the primary key column name from registry fields."""
+        fields = reg_entry.get("fields", {})
+        if "0" in fields:
+            return fields["0"].get("sql_column", "") or fields["0"].get("name", "entry")
+        return "entry"
 
     def _lookup_datastore(self, args: Dict[str, Any]) -> Dict[str, Any]:
         query = args.get("query", "").strip()
@@ -681,7 +739,10 @@ class DBCQueryMCP:
 
         rows, error = self._query_database(sql)
         if error:
-            return {"error": error, "isError": True}
+            msg = f"Database query failed: {error}"
+            if "Access denied" in error or "connect" in error.lower() or "Can't connect" in error:
+                msg += " Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD environment variables."
+            return {"error": msg, "isError": True}
 
         return {"result": rows or [], "count": len(rows or [])}
 

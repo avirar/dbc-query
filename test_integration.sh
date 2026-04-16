@@ -116,5 +116,46 @@ if 'metadata' in r2:
 echo "$result"
 echo "  PASS"
 
+# Test 11: describe_fields on SQL-only store gives helpful error
+echo ""
+echo "Test 11: describe_fields on SQL-only store (quest_template) gives guidance"
+result=$(call_tool describe_fields '{"dbc_name": "quest_template"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_hint = 'query_game_data' in err or 'lookup_datastore' in err
+print(f'  has_guidance={has_hint}, error_snippet={err[:80]}...')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 12: list_dbcs with no match gives hint
+echo ""
+echo "Test 12: list_dbcs for 'Quest' gives hint about list_stores"
+result=$(call_tool list_dbcs '{"search": "Quest"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+has_hint = 'hint' in d and 'list_stores' in d.get('hint', '')
+print(f'  count={d[\"count\"]}, has_hint={has_hint}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 13: query_dbc on SQL-only store gives helpful error
+echo ""
+echo "Test 13: query_dbc on creature_template gives guidance"
+result=$(call_tool query_dbc '{"dbc_name": "creature_template"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_hint = 'query_game_data' in err or 'SQL' in err
+print(f'  has_guidance={has_hint}, error_snippet={err[:80]}...')
+")
+echo "$result"
+echo "  PASS"
+
 echo ""
 echo "All tests completed successfully!"
