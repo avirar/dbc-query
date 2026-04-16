@@ -89,7 +89,7 @@ mcp__dbc_query__list_dbcs(search="Spell")
 
 1. **Clone and configure:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/dbc-query.git ~/dbc-query
+   git clone https://github.com/avirar/dbc-query.git ~/dbc-query
    ```
 
 2. **Generate the datastore registry (optional — pre-generated):**
@@ -103,25 +103,43 @@ mcp__dbc_query__list_dbcs(search="Spell")
    ./test_integration.sh
    ```
 
-4. **Configure as MCP server** — add to `~/.claude.json` in `mcpServers`:
-   ```json
+4. **Configure as MCP server:**
+
+   **opencode** — add to `~/.config/opencode/opencode.jsonc` in the `"mcp"` section:
+   ```jsonc
    {
-     "dbc_query": {
-       "type": "stdio",
-       "command": "python3",
-       "args": ["/root/dbc-query/server.py"],
-       "env": {
-         "DBC_PATH": "/root/azerothcore-wotlk/env/dist/bin/dbc",
-         "DBC_FORMAT_FILE": "/root/azerothcore-wotlk/src/server/shared/DataStores/DBCfmt.h",
-         "DB_HOST": "localhost",
-         "DB_PORT": "3306",
-         "DB_USER": "root",
-         "DB_PASSWORD": "password",
-         "DB_NAME": "acore_world"
+     "mcp": {
+       "dbc_query": {
+         "type": "local",
+         "command": ["python3", "/path/to/dbc-query/server.py"],
+         "environment": {
+           "DBC_PATH": "/path/to/azerothcore-wotlk/env/dist/bin/dbc",
+           "DBC_FORMAT_FILE": "/path/to/azerothcore-wotlk/src/server/shared/DataStores/DBCfmt.h"
+         },
+         "enabled": true
        }
      }
    }
    ```
+
+   **Claude Code** — add to `~/.claude.json` in the `"mcpServers"` section:
+   ```json
+   {
+     "mcpServers": {
+       "dbc_query": {
+         "type": "stdio",
+         "command": "python3",
+         "args": ["/path/to/dbc-query/server.py"],
+         "env": {
+           "DBC_PATH": "/path/to/azerothcore-wotlk/env/dist/bin/dbc",
+           "DBC_FORMAT_FILE": "/path/to/azerothcore-wotlk/src/server/shared/DataStores/DBCfmt.h"
+         }
+       }
+     }
+   }
+   ```
+
+   **Important:** Update the paths to match your installation. DB credentials are optional — if omitted, the server auto-detects them from `worldserver.conf`. To override, set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` environment variables.
 
 ## Architecture
 
