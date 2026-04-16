@@ -236,5 +236,22 @@ else:
 echo "$result"
 echo "  PASS"
 
+# Test 19: execute_sql returns hint for empty loot_template results
+echo ""
+echo "Test 19: execute_sql hint for empty loot_template search"
+result=$(call_tool execute_sql '{"sql": "SELECT * FROM gameobject_loot_template WHERE item = 9999999"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+hint = d.get('hint', '')
+has_hint = 'gameobject_questitem' in hint and 'creature_questitem' in hint
+print(f'  has_hint={has_hint}')
+print(f'  count={d.get(\"count\", 0)}')
+if hint:
+    print(f'  hint_preview={hint[:80]}...')
+")
+echo "$result"
+echo "  PASS"
+
 echo ""
 echo "All tests completed successfully!"

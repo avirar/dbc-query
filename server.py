@@ -706,6 +706,13 @@ class DBCQueryMCP:
             metadata["manager_singleton"] = mgr
             metadata["access_pattern"] = f"{mgr}->Get{reg_entry.get('c_struct', '')}Data()"
 
+        if not rows:
+            table = sql_table
+            if 'loot_template' in table.lower() and args.get("filter"):
+                hint = "No results. For quest items, try gameobject_questitem or creature_questitem tables.\n"
+                hint += "Use lookup_datastore(query='gameobject_questitem') to see schema."
+                return {"result": [], "count": 0, "hint": hint, "metadata": metadata}
+
         return {"result": rows or [], "count": len(rows or []), "metadata": metadata}
 
     def _find_primary_key(self, reg_entry: Dict) -> str:
@@ -915,6 +922,18 @@ class DBCQueryMCP:
                         msg += f"\nDid you mean: {', '.join(sorted(close)[:5])}?"
                     msg += f"\nUse lookup_datastore(query='{bad_table}') to verify the table name and get column schema."
             return {"error": msg, "isError": True}
+
+        # Hint for empty results on loot template searches
+        if not rows:
+            sql_upper = sql.upper()
+            table_match = re.search(r'FROM\s+`?(\w+)`?', sql, re.IGNORECASE)
+            if table_match:
+                table = table_match.group(1)
+                if 'loot_template' in table.lower() and re.search(r'\bITEM\s*=|ITEM\s+=\s*\d+', sql, re.IGNORECASE):
+                    msg = "No results. For quest items, try gameobject_questitem or creature_questitem tables instead of loot_template tables.\n"
+                    msg += f"Example: SELECT * FROM gameobject_questitem WHERE ItemId = <item_id>\n"
+                    msg += "Use lookup_datastore(query='gameobject_questitem') to see schema."
+                    return {"result": [], "count": 0, "hint": msg}
 
         return {"result": rows or [], "count": len(rows or [])}
 
