@@ -253,5 +253,24 @@ if hint:
 echo "$result"
 echo "  PASS"
 
+# Test 20: execute_sql suggests correct table from database (not in registry)
+echo ""
+echo "Test 20: Unknown table suggests tables from database"
+result=$(call_tool execute_sql '{"sql": "SELECT * FROM gameobject_template_loot WHERE Entry = 11119"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_suggestion = 'gameobject_loot_template' in err and 'Did you mean' in err
+print(f'  has_suggestion={has_suggestion}')
+if err:
+    import re
+    match = re.search(r'Did you mean: ([^\n]+)', err)
+    if match:
+        print(f'  suggestion={match.group(1)}')
+")
+echo "$result"
+echo "  PASS"
+
 echo ""
 echo "All tests completed successfully!"

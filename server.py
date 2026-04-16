@@ -14,7 +14,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Set, Tuple
 from dbc_reader import WDBCReader
 from format_parser import FormatParser
 
@@ -48,8 +48,10 @@ class DBCQueryMCP:
         self.dbc_cache: Dict[str, WDBCReader] = {}
         self._pk_cache: Dict[str, str] = {}
         self._schema_cache: Dict[str, Optional[List[Dict]]] = {}
+        self._all_tables_cache: Set[str] = set()
 
         self._check_db_connection()
+        self._load_all_tables()
 
     def _auto_detect_db_config(self):
         for conf_path in [
@@ -88,6 +90,17 @@ class DBCQueryMCP:
         else:
             self.db_available = True
             print(f"Database connected: {self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}", file=sys.stderr)
+
+    def _load_all_tables(self):
+        """Load all table names from database into cache."""
+        if not self.db_available:
+            return
+        rows, _ = self._query_database("SHOW TABLES")
+        if rows:
+            for row in rows:
+                table = list(row.values())[0]
+                self._all_tables_cache.add(table.lower())
+        print(f"Cached {len(self._all_tables_cache)} table names from database", file=sys.stderr)
 
     def _load_registry(self) -> Dict[str, Any]:
         registry_file = Path(__file__).parent / "datastore_registry.json"
@@ -684,6 +697,12 @@ class DBCQueryMCP:
                 if suggestion:
                     error_msg += f"\n{suggestion}"
                 error_msg += f"\nUse lookup_datastore(query='{sql_table}') for full schema."
+            elif "Unknown table" in db_error or "doesn't exist" in db_error:
+                bad_table = sql_table
+                db_close = [t for t in self._all_tables_cache if bad_table.lower() in t or t in bad_table.lower()]
+                if db_close:
+                    error_msg += f"\nDid you mean: {', '.join(db_close[:5])}?"
+                error_msg += f"\nUse lookup_datastore(query='{bad_table}') to verify table and get schema."
             return {"error": error_msg, "isError": True}
 
         metadata = {
@@ -912,14 +931,26 @@ class DBCQueryMCP:
                     table_match = re.search(r"Unknown table '([^']+)'", error)
                 if table_match:
                     bad_table = table_match.group(2) if table_match.lastindex >= 2 else table_match.group(1)
+                    # First search registry
                     known_tables = set()
                     for e in self.registry.get("entries", {}).values():
                         t = e.get("sql_table", "")
                         if t:
                             known_tables.add(t.lower())
                     close = [t for t in known_tables if bad_table.lower() in t or t in bad_table.lower()]
-                    if close:
-                        msg += f"\nDid you mean: {', '.join(sorted(close)[:5])}?"
+                    # Then search all tables in database with smarter matching
+                    db_close = []
+                    bad_parts = set(bad_table.lower().replace('_', ' ').split())
+                    for t in self._all_tables_cache:
+                        t_parts = set(t.replace('_', ' ').split())
+                        # Check if there's significant overlap (at least 2 words match)
+                        overlap = bad_parts & t_parts
+                        if len(overlap) >= 2 or bad_table.lower() in t or t in bad_table.lower():
+                            db_close.append(t)
+                    # Combine and deduplicate
+                    all_close = sorted(set(close + db_close))[:5]
+                    if all_close:
+                        msg += f"\nDid you mean: {', '.join(all_close)}?"
                     msg += f"\nUse lookup_datastore(query='{bad_table}') to verify the table name and get column schema."
             return {"error": msg, "isError": True}
 
