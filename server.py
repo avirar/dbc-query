@@ -11,6 +11,7 @@ to their underlying data sources.
 import json
 import sys
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -30,17 +31,62 @@ class DBCQueryMCP:
             'DBC_FORMAT_FILE',
             '/root/azerothcore-wotlk/src/server/shared/DataStores/DBCfmt.h'
         )
-        self.db_host = os.environ.get('DB_HOST', 'localhost')
+        self.db_host = os.environ.get('DB_HOST', '')
         self.db_port = os.environ.get('DB_PORT', '3306')
-        self.db_user = os.environ.get('DB_USER', 'root')
-        self.db_password = os.environ.get('DB_PASSWORD', 'password')
+        self.db_user = os.environ.get('DB_USER', '')
+        self.db_password = os.environ.get('DB_PASSWORD', '')
         self.db_name = os.environ.get('DB_NAME', 'acore_world')
+        self.db_available = False
+
+        if not self.db_host or not self.db_user:
+            self._auto_detect_db_config()
 
         self.format_parser = FormatParser(self.format_file)
         self.format_parser.parse()
 
         self.registry = self._load_registry()
         self.dbc_cache: Dict[str, WDBCReader] = {}
+        self._pk_cache: Dict[str, str] = {}
+
+        self._check_db_connection()
+
+    def _auto_detect_db_config(self):
+        for conf_path in [
+            '/root/azerothcore-wotlk/env/dist/etc/worldserver.conf',
+            os.path.expanduser('~/azerothcore-wotlk/env/dist/etc/worldserver.conf'),
+        ]:
+            conf = Path(conf_path)
+            if not conf.exists():
+                continue
+            try:
+                text = conf.read_text()
+                m = re.search(r'^WorldDatabaseInfo\s*=\s*"([^"]+)"', text, re.MULTILINE)
+                if m:
+                    parts = m.group(1).split(';')
+                    if len(parts) >= 5:
+                        self.db_host = parts[0]
+                        self.db_port = parts[1]
+                        self.db_user = parts[2]
+                        self.db_password = parts[3]
+                        self.db_name = parts[4]
+                        print(f"Auto-detected DB config from {conf_path}", file=sys.stderr)
+                        return
+            except Exception:
+                continue
+        self.db_host = self.db_host or 'localhost'
+        self.db_user = self.db_user or 'root'
+        self.db_password = self.db_password or ''
+
+    def _check_db_connection(self):
+        rows, error = self._query_database("SELECT 1 AS test")
+        if error:
+            print(f"Warning: Database connection failed: {error}", file=sys.stderr)
+            print(f"  DB config: {self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}", file=sys.stderr)
+            print(f"  SQL queries will fail. Set DB_HOST, DB_USER, DB_PASSWORD, DB_NAME env vars.", file=sys.stderr)
+            self.db_available = False
+        else:
+            self.db_available = True
+            print(f"Database connected: {self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}", file=sys.stderr)
 
     def _load_registry(self) -> Dict[str, Any]:
         registry_file = Path(__file__).parent / "datastore_registry.json"
@@ -561,12 +607,11 @@ class DBCQueryMCP:
         # Step 2: Try database query if we have an SQL overlay table
         sql_table = reg_entry.get("sql_table", "") if reg_entry else ""
         if sql_table:
-            sql_db = reg_entry.get("sql_database", "acore_world")
             sql = f"SELECT * FROM {sql_table}"
             if "id" in args:
                 sql += f" WHERE ID = {args['id']}"
             sql += f" LIMIT {args.get('limit', 100)}"
-            db_result, db_error = self._query_database(sql, sql_db)
+            db_result, db_error = self._query_database(sql)
 
         # Step 3: Merge results
         if db_result and not dbc_result:
@@ -602,7 +647,12 @@ class DBCQueryMCP:
         if not sql_table:
             return {"error": f"No SQL table for {reg_entry.get('c_struct', 'unknown')}", "isError": True}
 
-        sql_db = reg_entry.get("sql_database", "acore_world")
+        if not self.db_available:
+            return {
+                "error": f"Database not available ({self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}). Check DB credentials in MCP server environment config.",
+                "isError": True
+            }
+
         sql = f"SELECT * FROM {sql_table}"
 
         where_clauses = []
@@ -621,7 +671,7 @@ class DBCQueryMCP:
             sql += " WHERE " + " AND ".join(where_clauses)
         sql += f" LIMIT {args.get('limit', 100)}"
 
-        rows, db_error = self._query_database(sql, sql_db)
+        rows, db_error = self._query_database(sql)
         if db_error:
             return {"error": f"Database error: {db_error}", "isError": True}
 
@@ -643,8 +693,21 @@ class DBCQueryMCP:
         """Try to determine the primary key column name from registry fields."""
         fields = reg_entry.get("fields", {})
         if "0" in fields:
-            return fields["0"].get("sql_column", "") or fields["0"].get("name", "entry")
-        return "entry"
+            f = fields["0"]
+            col = f.get("sql_column", "") or f.get("name", "")
+            if col:
+                return col
+        sql_table = reg_entry.get("sql_table", "")
+        if sql_table and self.db_available and sql_table not in self._pk_cache:
+            self._pk_cache[sql_table] = "entry"
+            rows, err = self._query_database(
+                f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
+                f"WHERE TABLE_SCHEMA = '{self.db_name}' AND TABLE_NAME = '{sql_table}' "
+                f"AND ORDINAL_POSITION = 1"
+            )
+            if rows:
+                self._pk_cache[sql_table] = rows[0].get("COLUMN_NAME", "entry")
+        return self._pk_cache.get(sql_table, "entry")
 
     def _lookup_datastore(self, args: Dict[str, Any]) -> Dict[str, Any]:
         query = args.get("query", "").strip()
@@ -730,6 +793,12 @@ class DBCQueryMCP:
         sql = args.get("sql", "").strip()
         if not sql:
             return {"error": "sql is required", "isError": True}
+
+        if not self.db_available:
+            return {
+                "error": f"Database not available ({self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}). Check DB credentials in MCP server environment config.",
+                "isError": True
+            }
 
         # Safety: block destructive statements
         sql_upper = sql.upper().strip()
