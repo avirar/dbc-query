@@ -157,5 +157,51 @@ print(f'  has_guidance={has_hint}, error_snippet={err[:80]}...')
 echo "$result"
 echo "  PASS"
 
+# Test 14: lookup_datastore returns live sql_columns
+echo ""
+echo "Test 14: lookup_datastore returns sql_columns for SQL tables"
+result=$(call_tool lookup_datastore '{"query": "quest_template"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+m=d['result']['matches'][0]
+cols = m.get('sql_columns', [])
+print(f'  has_sql_columns={len(cols) > 0}, count={len(cols)}')
+if cols:
+    print(f'  first 3: {[c[\"name\"] for c in cols[:3]]}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 15: query_game_data returns columns in metadata
+echo ""
+echo "Test 15: query_game_data includes columns in metadata"
+result=$(call_tool query_game_data '{"dbc_name": "quest_template", "id": 3904}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+meta = d.get('metadata', {})
+cols = meta.get('columns', [])
+pk = meta.get('primary_key', '')
+print(f'  has_columns={len(cols) > 0}, count={len(cols)}, primary_key={pk}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 16: execute_sql suggests correct columns on error
+echo ""
+echo "Test 16: execute_sql suggests columns on Unknown column error"
+result=$(call_tool execute_sql '{"sql": "SELECT ID, name FROM quest_template LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_suggestion = 'Available columns' in err or 'Similar columns' in err
+print(f'  has_suggestion={has_suggestion}')
+print(f'  error_preview={err[:120]}...')
+")
+echo "$result"
+echo "  PASS"
+
 echo ""
 echo "All tests completed successfully!"

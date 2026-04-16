@@ -47,6 +47,7 @@ class DBCQueryMCP:
         self.registry = self._load_registry()
         self.dbc_cache: Dict[str, WDBCReader] = {}
         self._pk_cache: Dict[str, str] = {}
+        self._schema_cache: Dict[str, Optional[List[Dict]]] = {}
 
         self._check_db_connection()
 
@@ -673,7 +674,16 @@ class DBCQueryMCP:
 
         rows, db_error = self._query_database(sql)
         if db_error:
-            return {"error": f"Database error: {db_error}", "isError": True}
+            error_msg = f"Database error: {db_error}"
+            col_match = re.search(r"Unknown column '([^']+)' in '([^']*)'", db_error)
+            if not col_match:
+                col_match = re.search(r"Unknown column '([^']+)'", db_error)
+            if col_match:
+                bad_col = col_match.group(1)
+                suggestion = self._suggest_column(sql_table, bad_col)
+                if suggestion:
+                    error_msg += f"\n{suggestion}"
+            return {"error": error_msg, "isError": True}
 
         metadata = {
             "source": "database",
@@ -682,6 +692,14 @@ class DBCQueryMCP:
             "c_struct": reg_entry.get("c_struct", ""),
             "store_variable": reg_entry.get("store_variable", ""),
         }
+        pk_col = self._find_primary_key(reg_entry)
+        metadata["primary_key"] = pk_col
+        if rows:
+            metadata["columns"] = list(rows[0].keys())
+        elif self.db_available:
+            schema = self._get_table_schema(sql_table)
+            if schema:
+                metadata["columns"] = [c["COLUMN_NAME"] for c in schema]
         mgr = reg_entry.get("manager_singleton", "")
         if mgr:
             metadata["manager_singleton"] = mgr
@@ -699,15 +717,58 @@ class DBCQueryMCP:
                 return col
         sql_table = reg_entry.get("sql_table", "")
         if sql_table and self.db_available and sql_table not in self._pk_cache:
-            self._pk_cache[sql_table] = "entry"
-            rows, err = self._query_database(
-                f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS "
-                f"WHERE TABLE_SCHEMA = '{self.db_name}' AND TABLE_NAME = '{sql_table}' "
-                f"AND ORDINAL_POSITION = 1"
-            )
-            if rows:
-                self._pk_cache[sql_table] = rows[0].get("COLUMN_NAME", "entry")
+            schema = self._get_table_schema(sql_table)
+            if schema:
+                for c in schema:
+                    if c.get("is_primary_key"):
+                        self._pk_cache[sql_table] = c["COLUMN_NAME"]
+                        break
+                else:
+                    self._pk_cache[sql_table] = schema[0]["COLUMN_NAME"] if schema else "entry"
+            else:
+                self._pk_cache[sql_table] = "entry"
         return self._pk_cache.get(sql_table, "entry")
+
+    def _get_table_schema(self, table_name: str) -> Optional[List[Dict]]:
+        """Get column info from INFORMATION_SCHEMA, cached per table."""
+        if not self.db_available:
+            return None
+        if table_name in self._schema_cache:
+            return self._schema_cache[table_name]
+        self._schema_cache[table_name] = None
+        pk_rows, _ = self._query_database(
+            f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE "
+            f"WHERE TABLE_SCHEMA = '{self.db_name}' AND TABLE_NAME = '{table_name}' "
+            f"AND CONSTRAINT_NAME = 'PRIMARY'"
+        )
+        pk_col = pk_rows[0]["COLUMN_NAME"] if pk_rows else None
+        rows, _ = self._query_database(
+            f"SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY "
+            f"FROM INFORMATION_SCHEMA.COLUMNS "
+            f"WHERE TABLE_SCHEMA = '{self.db_name}' AND TABLE_NAME = '{table_name}' "
+            f"ORDER BY ORDINAL_POSITION"
+        )
+        if rows:
+            for r in rows:
+                r["is_primary_key"] = (r["COLUMN_NAME"] == pk_col) if pk_col else (r.get("COLUMN_KEY") == "PRI")
+            self._schema_cache[table_name] = rows[:50]
+        return self._schema_cache[table_name]
+
+    def _suggest_column(self, table_name: str, bad_col: str) -> Optional[str]:
+        """Find similar column names when a query fails on Unknown column."""
+        schema = self._get_table_schema(table_name)
+        if not schema:
+            return None
+        columns = [c["COLUMN_NAME"] for c in schema]
+        bad_lower = bad_col.lower()
+        suggestions = [c for c in columns if c.lower() == bad_lower]
+        if not suggestions:
+            suggestions = [c for c in columns if bad_lower in c.lower() or c.lower() in bad_lower]
+        if not suggestions:
+            suggestions = [c for c in columns if c.lower().startswith(bad_lower[:3])]
+        if suggestions:
+            return f"Column '{bad_col}' not found in '{table_name}'. Similar columns: {', '.join(suggestions[:8])}. All columns: {', '.join(columns[:30])}"
+        return f"Column '{bad_col}' not found in '{table_name}'. Available columns: {', '.join(columns[:30])}"
 
     def _lookup_datastore(self, args: Dict[str, Any]) -> Dict[str, Any]:
         query = args.get("query", "").strip()
@@ -787,6 +848,19 @@ class DBCQueryMCP:
                 for k, v in sample
             ]
 
+        sql_table = entry.get("sql_table", "")
+        if sql_table and self.db_available:
+            schema = self._get_table_schema(sql_table)
+            if schema:
+                result["sql_columns"] = [
+                    {
+                        "name": c["COLUMN_NAME"],
+                        "type": c["DATA_TYPE"],
+                        "is_primary_key": c.get("is_primary_key", False),
+                    }
+                    for c in schema
+                ]
+
         return result
 
     def _execute_sql(self, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -811,6 +885,32 @@ class DBCQueryMCP:
             msg = f"Database query failed: {error}"
             if "Access denied" in error or "connect" in error.lower() or "Can't connect" in error:
                 msg += " Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD environment variables."
+            elif "Unknown column" in error:
+                col_match = re.search(r"Unknown column '([^']+)' in '([^']*)'", error)
+                if not col_match:
+                    col_match = re.search(r"Unknown column '([^']+)'", error)
+                if col_match:
+                    bad_col = col_match.group(1)
+                    from_match = re.search(r'\bFROM\s+`?(\w+)`?', sql, re.IGNORECASE)
+                    table_hint = from_match.group(1) if from_match else ""
+                    if table_hint and table_hint.upper() not in ("SELECT", "DUAL"):
+                        suggestion = self._suggest_column(table_hint, bad_col)
+                        if suggestion:
+                            msg += f"\n{suggestion}"
+            elif "Unknown table" in error or "doesn't exist" in error:
+                table_match = re.search(r"Table '(\w+)\.(\w+)' doesn't exist", error)
+                if not table_match:
+                    table_match = re.search(r"Unknown table '([^']+)'", error)
+                if table_match:
+                    bad_table = table_match.group(2) if table_match.lastindex >= 2 else table_match.group(1)
+                    known_tables = set()
+                    for e in self.registry.get("entries", {}).values():
+                        t = e.get("sql_table", "")
+                        if t:
+                            known_tables.add(t.lower())
+                    close = [t for t in known_tables if bad_table.lower() in t or t in bad_table.lower()]
+                    if close:
+                        msg += f"\nDid you mean: {', '.join(sorted(close)[:5])}?"
             return {"error": msg, "isError": True}
 
         return {"result": rows or [], "count": len(rows or [])}
