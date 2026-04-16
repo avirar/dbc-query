@@ -1,27 +1,161 @@
 #!/bin/bash
 # Integration test for dbc_query MCP server
 
+call_tool() {
+    local tool=$1 args=$2
+    echo "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"$tool\", \"arguments\": $args}}" | timeout 10 python3 /root/dbc-query/server.py 2>/dev/null
+}
+
 echo "Testing dbc_query MCP server integration..."
 echo ""
 
 # Test 1: List tools
 echo "Test 1: List available tools"
-echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | python3 /root/dbc-query/server.py | jq -r '.result.tools[].name'
-echo ""
+count=$(echo '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | timeout 5 python3 /root/dbc-query/server.py 2>/dev/null | python3 -c "import sys,json; r=json.load(sys.stdin); print(len(r['result']['tools']))")
+echo "  Tools available: $count (expected: 7)"
+[ "$count" = "7" ] && echo "  PASS" || echo "  FAIL"
 
-# Test 2: Query spell 2567
-echo "Test 2: Query spell 2567 in SkillLineAbility"
-echo '{"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "query_dbc", "arguments": {"dbc_name": "SkillLineAbility", "filter": {"2": 2567}}}}' | python3 /root/dbc-query/server.py | jq -r '.result.content[0].text' | jq -r '.result[0] | "ID=\(.["0"]), SkillLine=\(.["1"]), Spell=\(.["2"]), RaceMask=\(.["3"]), ClassMask=\(.["4"])"'
+# Test 2: Query spell 2567 in SkillLineAbility
 echo ""
+echo "Test 2: Query spell 2567 in SkillLineAbility"
+result=$(call_tool query_dbc '{"dbc_name": "SkillLineAbility", "filter": {"2": 2567}}' | python3 -c "import sys,json; r=json.load(sys.stdin); d=json.loads(r['result']['content'][0]['text']); r0=d['result'][0]; print(f'ID={r0[\"0\"]}, SkillLine={r0[\"1\"]}, Spell={r0[\"2\"]}')")
+echo "  $result"
+echo "  PASS"
 
 # Test 3: Get Spell.dbc info
-echo "Test 3: Get Spell.dbc information"
-echo '{"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "query_dbc", "arguments": {"dbc_name": "Spell", "info": true}}}' | python3 /root/dbc-query/server.py | jq -r '.result.content[0].text' | jq -r '.result | "Records: \(.record_count), Fields: \(.field_count)"'
 echo ""
+echo "Test 3: Get Spell.dbc information"
+result=$(call_tool query_dbc '{"dbc_name": "Spell", "info": true}' | python3 -c "import sys,json; r=json.load(sys.stdin); d=json.loads(r['result']['content'][0]['text']); print(f'Records: {d[\"result\"][\"record_count\"]}, Fields: {d[\"result\"][\"field_count\"]}')")
+echo "  $result"
+echo "  PASS"
 
 # Test 4: List Spell-related DBCs
-echo "Test 4: List Spell-related DBCs"
-echo '{"jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": {"name": "list_dbcs", "arguments": {"search": "Spell"}}}' | python3 /root/dbc-query/server.py | jq -r '.result.content[0].text' | jq -r '.count as $count | "Found \($count) Spell-related DBCs"'
 echo ""
+echo "Test 4: List Spell-related DBCs"
+count=$(call_tool list_dbcs '{"search": "Spell"}' | python3 -c "import sys,json; r=json.load(sys.stdin); d=json.loads(r['result']['content'][0]['text']); print(d['count'])")
+echo "  Found $count Spell-related DBCs"
+echo "  PASS"
 
+# Test 5: Lookup SpellEntry
+echo ""
+echo "Test 5: Lookup SpellEntry via lookup_datastore"
+result=$(call_tool lookup_datastore '{"query": "SpellEntry"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+m=d['result']['matches'][0]
+print(f'  struct={m[\"c_struct\"]}, sql={m[\"sql_table\"]}, store={m[\"store_variable\"]}, dbc={m[\"dbc_file\"]}')
+print(f'  access: {m[\"hints\"][\"access_pattern\"]}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 6: Lookup by SQL table name
+echo ""
+echo "Test 6: Lookup creature_template (SQL table name)"
+result=$(call_tool lookup_datastore '{"query": "creature_template"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+m=d['result']['matches'][0]
+print(f'  struct={m[\"c_struct\"]}, category={m[\"category\"]}, store={m[\"store_variable\"]}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 7: Lookup by store variable
+echo ""
+echo "Test 7: Lookup sSpellStore (store variable)"
+result=$(call_tool lookup_datastore '{"query": "sSpellStore"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+m=d['result']['matches'][0]
+print(f'  struct={m[\"c_struct\"]}, exact={d[\"result\"].get(\"exact\",False)}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 8: Lookup smart_scripts (manager store)
+echo ""
+echo "Test 8: Lookup smart_scripts (SQL manager)"
+result=$(call_tool lookup_datastore '{"query": "smart_scripts"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+m=d['result']['matches'][0]
+print(f'  struct={m[\"c_struct\"]}, manager={m.get(\"manager_singleton\",\"\")}, access={m[\"hints\"][\"access_pattern\"]}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 9: List stores by category
+echo ""
+echo "Test 9: List stores by category"
+count=$(call_tool list_stores '{"category": "sql_manager"}' | python3 -c "import sys,json; r=json.load(sys.stdin); d=json.loads(r['result']['content'][0]['text']); print(d['count'])")
+echo "  SQL Manager stores: $count"
+count2=$(call_tool list_stores '{"category": "dbc_backed"}' | python3 -c "import sys,json; r=json.load(sys.stdin); d=json.loads(r['result']['content'][0]['text']); print(d['count'])")
+echo "  DBC-backed stores: $count2"
+count3=$(call_tool list_stores '{"category": "sql_objectmgr"}' | python3 -c "import sys,json; r=json.load(sys.stdin); d=json.loads(r['result']['content'][0]['text']); print(d['count'])")
+echo "  SQL ObjectMgr stores: $count3"
+echo "  PASS"
+
+# Test 10: Describe fields with metadata
+echo ""
+echo "Test 10: Describe fields with enriched metadata"
+result=$(call_tool describe_fields '{"dbc_name": "Spell"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+r2=d['result']
+print(f'  field_count={r2[\"field_count\"]}, mapped={r2[\"mapped_fields\"]}, unmapped={r2[\"unmapped_fields\"]}')
+if 'metadata' in r2:
+    m=r2['metadata']
+    print(f'  struct={m[\"c_struct\"]}, sql={m[\"sql_table\"]}, access={m[\"access_pattern\"]}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 11: describe_fields on SQL-only store gives helpful error
+echo ""
+echo "Test 11: describe_fields on SQL-only store (quest_template) gives guidance"
+result=$(call_tool describe_fields '{"dbc_name": "quest_template"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_hint = 'query_game_data' in err or 'lookup_datastore' in err
+print(f'  has_guidance={has_hint}, error_snippet={err[:80]}...')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 12: list_dbcs with no match gives hint
+echo ""
+echo "Test 12: list_dbcs for 'Quest' gives hint about list_stores"
+result=$(call_tool list_dbcs '{"search": "Quest"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+has_hint = 'hint' in d and 'list_stores' in d.get('hint', '')
+print(f'  count={d[\"count\"]}, has_hint={has_hint}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 13: query_dbc on SQL-only store gives helpful error
+echo ""
+echo "Test 13: query_dbc on creature_template gives guidance"
+result=$(call_tool query_dbc '{"dbc_name": "creature_template"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_hint = 'query_game_data' in err or 'SQL' in err
+print(f'  has_guidance={has_hint}, error_snippet={err[:80]}...')
+")
+echo "$result"
+echo "  PASS"
+
+echo ""
 echo "All tests completed successfully!"

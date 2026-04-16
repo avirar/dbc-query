@@ -35,6 +35,14 @@ class FormatParser:
         "CreatureFamily": "CreatureFamily",
         "Talent": "TalentEntry",
         "TalentTab": "TalentTabEntry",
+        # File names with underscores -> Format names without
+        "Achievement_Category": "AchievementCategory",
+        "Achievement_Criteria": "AchievementCriteria",
+        # File names plural -> Format names with Entry suffix
+        "LFGDungeons": "LFGDungeonEntry",
+        "SpellCastTimes": "SpellCastTime",
+        # Abbreviated file names
+        "RandPropPoints": "RandomPropertiesPoints",
         # Add more mappings as discovered
     }
 
