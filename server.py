@@ -333,13 +333,13 @@ class DBCQueryMCP:
             },
             {
                 "name": "lookup_datastore",
-                "description": "Look up AzerothCore datastore metadata by C++ struct name, SQL table name, DBC file name, or store variable name. Returns the full cross-reference: C++ struct, DBC file, SQL table, store variable, manager singleton, field definitions, and source file locations. Essential for linking code references to underlying data.",
+                "description": "Look up AzerothCore datastore metadata by C++ struct name, SQL table name, DBC file name, or store variable name. Returns the full cross-reference: C++ struct, DBC file, SQL table, store variable, manager singleton, field definitions, and source file locations. IMPORTANT: Call this BEFORE writing SQL queries to discover column names. Returns sql_columns for SQL tables.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
                         "query": {
                             "type": "string",
-                            "description": "Name to look up. Examples: 'SpellEntry', 'creature_template', 'Spell.dbc', 'sSpellStore', 'smart_scripts'"
+                            "description": "Name to look up. Examples: 'SpellEntry', 'creature_template', 'gameobject_template', 'sSpellStore', 'smart_scripts'"
                         }
                     },
                     "required": ["query"]
@@ -347,7 +347,7 @@ class DBCQueryMCP:
             },
             {
                 "name": "execute_sql",
-                "description": "Execute a SQL query on the AzerothCore database (acore_world by default). Use for querying SQL-only stores like creature_template, item_template, quest_template, spell_proc_event, smart_scripts, conditions, etc. Prefer query_game_data for simple lookups — use this for complex joins or aggregations.",
+                "description": "Execute a SQL query on the AzerothCore database (acore_world by default). Use for querying SQL-only stores like creature_template, item_template, quest_template, spell_proc_event, smart_scripts, conditions, etc. Prefer query_game_data for simple lookups — use this for complex joins or aggregations. TIP: Use lookup_datastore first to discover table column names.",
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -683,6 +683,7 @@ class DBCQueryMCP:
                 suggestion = self._suggest_column(sql_table, bad_col)
                 if suggestion:
                     error_msg += f"\n{suggestion}"
+                error_msg += f"\nUse lookup_datastore(query='{sql_table}') for full schema."
             return {"error": error_msg, "isError": True}
 
         metadata = {
@@ -897,6 +898,7 @@ class DBCQueryMCP:
                         suggestion = self._suggest_column(table_hint, bad_col)
                         if suggestion:
                             msg += f"\n{suggestion}"
+                        msg += f"\nUse lookup_datastore(query='{table_hint}') for full schema."
             elif "Unknown table" in error or "doesn't exist" in error:
                 table_match = re.search(r"Table '(\w+)\.(\w+)' doesn't exist", error)
                 if not table_match:
@@ -911,6 +913,7 @@ class DBCQueryMCP:
                     close = [t for t in known_tables if bad_table.lower() in t or t in bad_table.lower()]
                     if close:
                         msg += f"\nDid you mean: {', '.join(sorted(close)[:5])}?"
+                    msg += f"\nUse lookup_datastore(query='{bad_table}') to verify the table name and get column schema."
             return {"error": msg, "isError": True}
 
         return {"result": rows or [], "count": len(rows or [])}
