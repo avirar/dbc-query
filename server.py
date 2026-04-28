@@ -673,7 +673,7 @@ class DBCQueryMCP:
                         },
                         "compact": {
                             "type": "boolean",
-                            "default": true,
+                            "default": True,
                             "description": "Default (true): strip null fields, omit raw section, unwrap single records. Set false for full readout with all fields and raw duplicates."
                         },
                         "limit": {
