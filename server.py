@@ -57,6 +57,54 @@ class DBCQueryMCP:
 
         self._check_db_connection()
         self._discover_all_tables()
+        self._field_name_cache = self._build_field_name_cache()
+
+    def _build_field_name_cache(self):
+        """Pre-compute field name → index mapping for all DBC-backed stores."""
+        cache = {}
+        entries = self.registry.get("entries", {})
+
+        for struct_name, entry in entries.items():
+            if entry.get("category") != "dbc_backed":
+                continue
+
+            dbc_name = entry.get("dbc_name", "")
+            if not dbc_name:
+                continue
+
+            cache[dbc_name.lower()] = {}
+
+            for idx_str, field_info in entry.get("fields", {}).items():
+                c_field = field_info.get("name", "")
+                sql_col = field_info.get("sql_column", "")
+                idx = int(idx_str)
+                ftype = field_info.get("type", "unknown")
+
+                if c_field:
+                    c_lower = c_field.lower()
+                    if c_lower not in cache[dbc_name.lower()]:
+                        cache[dbc_name.lower()][c_lower] = []
+                    cache[dbc_name.lower()][c_lower].append({
+                        "index": idx,
+                        "type": ftype,
+                        "source": "c_struct",
+                        "sql_column": sql_col,
+                        "original_name": c_field
+                    })
+
+                if sql_col and sql_col.lower() != c_field.lower():
+                    s_lower = sql_col.lower()
+                    if s_lower not in cache[dbc_name.lower()]:
+                        cache[dbc_name.lower()][s_lower] = []
+                    cache[dbc_name.lower()][s_lower].append({
+                        "index": idx,
+                        "type": ftype,
+                        "source": "sql_column",
+                        "c_struct_field": c_field,
+                        "original_name": sql_col
+                    })
+
+        return cache
 
     def _auto_detect_db_config(self):
         for conf_path in [
@@ -265,6 +313,100 @@ class DBCQueryMCP:
             parts.append(f"It is DBC-backed ({dbc_file}.dbc, SQL overlay: {sql_table}).")
             parts.append(f"Use query_game_data(dbc_name='{dbc_file}') for merged DBC+SQL data.")
         return " ".join(parts)
+
+    def _find_similar_field_names(self, key, reg_entry):
+        """Find field names similar to the given key using fuzzy matching."""
+        fields = reg_entry.get("fields", {})
+        key_lower = str(key).lower()
+        suggestions = []
+
+        for idx_str, info in fields.items():
+            field_name = info.get("name", "")
+            sql_col = info.get("sql_column", "")
+
+            for name in [field_name, sql_col]:
+                if not name:
+                    continue
+
+                n_lower = name.lower()
+
+                if key_lower in n_lower or n_lower in key_lower:
+                    suggestions.append(name)
+                    continue
+
+                if len(key_lower) >= 3 and n_lower.startswith(key_lower[:3]):
+                    suggestions.append(name)
+
+        seen = set()
+        unique = []
+        for s in suggestions:
+            if s.lower() not in seen:
+                seen.add(s.lower())
+                unique.append(s)
+
+        return unique[:10]
+
+    def _resolve_filter_key(self, key, reg_entry, dbc_name):
+        """Resolve filter key to DBC field index. Returns (index, resolved_name, note)."""
+        try:
+            idx = int(key)
+            return idx, str(idx), None
+        except (ValueError, TypeError):
+            pass
+
+        if not reg_entry:
+            raise ValueError(
+                f"Filter key '{key}' is not numeric and no registry info available. "
+                f"Use describe_fields('{dbc_name}') to see available fields."
+            )
+
+        dbc_lower = dbc_name.lower()
+        key_str = str(key)
+        key_lower = key_str.lower().strip()
+
+        array_match = re.match(r'^(.+?)\[(\d+)\]$', key_str)
+        if array_match:
+            base_field, array_idx = array_match.groups()
+            fields = reg_entry.get("fields", {})
+            for idx_str, info in fields.items():
+                field_name = info.get("name", "")
+                if field_name.lower() == f"{base_field.lower()}[{array_idx}]":
+                    return int(idx_str), key_str, None
+
+        dbc_cache = self._field_name_cache.get(dbc_lower, {})
+
+        if key_lower in dbc_cache:
+            matches = dbc_cache[key_lower]
+            if len(matches) == 1:
+                return matches[0]["index"], matches[0].get("original_name", key), None
+            else:
+                best = min(matches, key=lambda m: m["index"])
+                locale_idx = int(best["index"] % 16) if "array" in str(best.get("type", "")).lower() or "[" in best.get("original_name", "") else 0
+                note = f"Field '{key}' matches {len(matches)} array elements. Using [{locale_idx}] (default locale)."
+                return best["index"], best.get("original_name", key), note
+
+        suggestions = self._find_similar_field_names(key, reg_entry)
+        error = f"Filter key '{key}' not found in {dbc_name}."
+        if suggestions:
+            error += f"\n  Did you mean: {', '.join(suggestions[:5])}"
+        error += f"\n\n  Use describe_fields(dbc_name='{dbc_name}') for complete field list."
+        raise ValueError(error)
+
+    def _convert_filter_for_dbc(self, filter_data, reg_entry, dbc_name):
+        """Convert filter dict with field names to DBC-compatible numeric indices."""
+        if not filter_data:
+            return {}, []
+
+        converted = {}
+        notes = []
+
+        for key, value in filter_data.items():
+            idx, resolved_name, note = self._resolve_filter_key(key, reg_entry, dbc_name)
+            converted[idx] = value
+            if note:
+                notes.append(f"  {note}")
+
+        return converted, notes
 
     def _load_dbc(self, dbc_name: str) -> WDBCReader:
         if dbc_name in self.dbc_cache:
@@ -687,6 +829,159 @@ class DBCQueryMCP:
 
         return {"result": result}
 
+    def _annotate_single_record_with_source(self, record, fields, sql_values=None):
+        """Annotate single record with source tracking."""
+        if not isinstance(record, dict):
+            return record
+
+        pk_col = None
+        if "0" in fields:
+            pk_col = fields["0"].get("sql_column", "ID")
+
+        this_sql_values = None
+        if sql_values and isinstance(sql_values, dict):
+            this_sql_values = sql_values
+        elif sql_values and isinstance(sql_values, list) and len(sql_values) == len(record):
+            this_sql_values = next((s for s in sql_values if s.get(pk_col) == record.get(0)), None)
+
+        annotated = []
+        for idx, value in sorted(record.items()):
+            try:
+                idx_int = int(idx)
+            except (ValueError, TypeError):
+                continue
+
+            field_info = fields.get(str(idx_int), {})
+
+            sql_col = field_info.get("sql_column", "")
+            db_value = value
+            sql_value = None
+            source = "dbc"
+
+            if this_sql_values and sql_col:
+                sql_value = this_sql_values.get(sql_col)
+                if sql_value is not None:
+                    if db_value == sql_value:
+                        source = "merged"
+                    else:
+                        source = "dbc"
+
+            entry = {
+                "index": idx_int,
+                "name": field_info.get("name", f"Field{idx_int}"),
+                "value": db_value,
+                "type": field_info.get("type", "unknown"),
+                "source": source
+            }
+
+            if sql_col:
+                entry["sql_column"] = sql_col
+
+            if source == "dbc" and sql_value is not None and sql_value != db_value:
+                entry["sql_override"] = sql_value
+                entry["source_note"] = "DBC value; SQL has different value"
+
+            annotated.append(entry)
+
+        return annotated
+
+    def _annotate_dbc_result(self, result, reg_entry, db_result=None):
+        """Annotate DBC query results with field names, types, and source tracking."""
+        if not reg_entry:
+            return {"annotated": result if isinstance(result, list) else [result], "raw": result}
+
+        fields = reg_entry.get("fields", {})
+
+        sql_values = None
+        if db_result and isinstance(db_result, list) and len(db_result) > 0:
+            if isinstance(result, dict):
+                sql_values = db_result[0]
+
+        if isinstance(result, dict):
+            annotated = self._annotate_single_record_with_source(result, fields, sql_values)
+            return {"annotated": [annotated], "raw": result}
+
+        elif isinstance(result, list):
+            annotated_list = []
+            for r in result:
+                annotated = self._annotate_single_record_with_source(r, fields, sql_values)
+                annotated_list.append(annotated)
+
+            return {
+                "annotated": annotated_list,
+                "raw": result
+            }
+
+        return {"annotated": [], "raw": result}
+
+    def _dbc_filter_to_sql_where(self, filter_dict, reg_entry):
+        """Convert DBC index-based filter to SQL WHERE clauses."""
+        if not reg_entry or not filter_dict:
+            return []
+
+        fields = reg_entry.get("fields", {})
+        clauses = []
+
+        for idx, value in filter_dict.items():
+            field_info = fields.get(str(idx), {})
+            sql_col = field_info.get("sql_column") or field_info.get("name", f"Field{idx}")
+
+            if isinstance(value, str):
+                clauses.append(f"{sql_col} = '{value}'")
+            else:
+                clauses.append(f"{sql_col} = {value}")
+
+        return clauses
+
+    def _build_schema_error(self, dbc_name, error_msg, reg_entry, original_filter=None):
+        """Build rich error message with field mappings and suggestions."""
+        lines = [f"Query failed for '{dbc_name}':", error_msg, ""]
+
+        if original_filter:
+            lines.append(f"Original filter provided: {original_filter}")
+            lines.append("")
+
+        if reg_entry:
+            fields = reg_entry.get("fields", {})
+            if fields:
+                lines.append("Field reference (index → C++ field → SQL column):")
+                for idx_str, info in list(fields.items())[:15]:
+                    name = info.get("name", "Unknown")
+                    sql_col = info.get("sql_column", "-")
+                    ftype = info.get("type", "")
+                    lines.append(f"  {idx_str.rjust(3)}: {name.ljust(25)} [{sql_col}]")
+
+                if len(fields) > 15:
+                    lines.append(f"  ... and {len(fields) - 15} more fields")
+                    lines.append("")
+                    lines.append(f"Full list: describe_fields(dbc_name='{dbc_name}')")
+
+            lines.append("")
+            lines.append("Examples:")
+
+            example_fields = []
+            for idx_str, info in fields.items():
+                name = info.get("name", "")
+                if "[" not in name and name not in ["ID"]:
+                    example_fields.append((idx_str, name))
+                    if len(example_fields) >= 2:
+                        break
+
+            if example_fields:
+                idx1, name1 = example_fields[0]
+                lines.append(f"  By field name: query_game_data(dbc_name='{dbc_name}', filter={{'{name1}': value}})")
+                lines.append(f"  By index:      query_game_data(dbc_name='{dbc_name}', filter={{{idx1}: value}})")
+
+                if len(example_fields) == 2:
+                    idx2, name2 = example_fields[1]
+                    lines.append(f"  Multiple:     query_game_data(dbc_name='{dbc_name}', filter={{'{name1}': v1, '{name2}': v2}})")
+
+        return {
+            "error": "\n".join(lines),
+            "isError": True,
+            "suggestion": f"Use lookup_datastore(query='{dbc_name}') to see full schema and SQL columns."
+        }
+
     def _query_game_data(self, args: Dict[str, Any]) -> Dict[str, Any]:
         dbc_name = args.get("dbc_name")
         if not dbc_name:
@@ -712,8 +1007,16 @@ class DBCQueryMCP:
         dbc_error = None
         db_result = None
         db_error = None
+        filter_notes = []
 
-        # Step 1: Try DBC query
+        if "filter" in args:
+            try:
+                converted_filter, notes = self._convert_filter_for_dbc(args["filter"], reg_entry, dbc_name)
+                args["filter"] = converted_filter
+                filter_notes.extend(notes)
+            except ValueError as e:
+                return self._build_schema_error(dbc_name, str(e), reg_entry, args.get("filter"))
+
         try:
             dbc_result = self._query_dbc(args)
             if "error" in dbc_result:
@@ -724,41 +1027,51 @@ class DBCQueryMCP:
         except Exception as e:
             dbc_error = str(e)
 
-        # Step 2: Try database query if we have an SQL overlay table
         sql_table = reg_entry.get("sql_table", "") if reg_entry else ""
         if sql_table:
             sql = f"SELECT * FROM {sql_table}"
             if "id" in args:
-                sql += f" WHERE ID = {args['id']}"
+                pk_col = "ID"
+                if reg_entry:
+                    fields = reg_entry.get("fields", {})
+                    pk_col = fields.get("0", {}).get("sql_column", "ID")
+                sql += f" WHERE {pk_col} = {args['id']}"
+            elif "filter" in args and args["filter"]:
+                where_clauses = self._dbc_filter_to_sql_where(args["filter"], reg_entry)
+                if where_clauses:
+                    sql += " WHERE " + " AND ".join(where_clauses)
             sql += f" LIMIT {args.get('limit', 100)}"
             db_result, db_error = self._query_database(sql)
 
-        # Step 3: Merge results
         if db_result and not dbc_result:
             source = "database"
             merged = db_result
         elif dbc_result and not db_result:
             source = "dbc"
-            merged = dbc_result
+            merged = self._annotate_dbc_result(dbc_result, reg_entry)
         elif dbc_result and db_result:
             source = "hybrid"
-            merged = dbc_result
+            merged = self._annotate_dbc_result(dbc_result, reg_entry, db_result)
         else:
-            return {
-                "error": f"No data found. DBC: {dbc_error or 'N/A'}, DB: {db_error or 'N/A'}",
-                "isError": True
-            }
+            return self._build_schema_error(
+                dbc_name, f"No data found. DBC: {dbc_error or 'N/A'}, DB: {db_error or 'N/A'}",
+                reg_entry, args.get("filter")
+            )
 
         metadata = {
             "source": source,
             "dbc_exists": dbc_result is not None,
             "db_table": sql_table,
-            "db_exists": db_result is not None
+            "db_exists": db_result is not None,
+            "field_annotations": True
         }
         if reg_entry:
             metadata["c_struct"] = reg_entry.get("c_struct", "")
             metadata["store_variable"] = reg_entry.get("store_variable", "")
             metadata["access_pattern"] = f"{reg_entry.get('store_variable', '')}.LookupEntry(id)"
+
+        if filter_notes:
+            metadata["filter_notes"] = filter_notes
 
         return {"result": merged, "metadata": metadata}
 
