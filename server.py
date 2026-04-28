@@ -13,8 +13,9 @@ import sys
 import os
 import re
 import subprocess
+import difflib
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Set, Tuple
+from typing import Dict, Any, List, Optional, Set, Tuple, Union
 from dbc_reader import WDBCReader
 from format_parser import FormatParser
 
@@ -50,8 +51,12 @@ class DBCQueryMCP:
         self._schema_cache: Dict[str, Optional[List[Dict]]] = {}
         self._all_tables_cache: Set[str] = set()
 
+        self._db_tables_cache: Dict[str, Set[str]] = {}
+        self._table_to_db_cache: Dict[str, List[str]] = {}
+        self._db_priority_order = ['acore_world', 'acore_characters', 'acore_auth', 'acore_playerbots']
+
         self._check_db_connection()
-        self._load_all_tables()
+        self._discover_all_tables()
 
     def _auto_detect_db_config(self):
         for conf_path in [
@@ -91,16 +96,105 @@ class DBCQueryMCP:
             self.db_available = True
             print(f"Database connected: {self.db_user}@{self.db_host}:{self.db_port}/{self.db_name}", file=sys.stderr)
 
+    def _disconnect_from_db(self, db_name: str):
+        try:
+            subprocess.run([
+                "mysql", "-h", self.db_host, "-P", self.db_port,
+                "-u", self.db_user, f"-p{self.db_password}",
+                "-D", db_name, "-e", "KILL CONNECTION ID(); -- no-op on disconnect"
+            ], capture_output=True, timeout=5)
+        except Exception:
+            pass
+
     def _load_all_tables(self):
-        """Load all table names from database into cache."""
+        """Clear table cache for reloading."""
+        self._all_tables_cache.clear()
+
+    def _discover_all_tables(self):
+        """Discover all tables across all AzerothCore databases and build routing cache."""
         if not self.db_available:
+            print("Skipping table discovery (database unavailable)", file=sys.stderr)
             return
-        rows, _ = self._query_database("SHOW TABLES")
-        if rows:
+
+        databases = ['acore_world', 'acore_characters', 'acore_auth', 'acore_playerbots']
+        total_tables = 0
+
+        for db in databases:
+            rows, error = self._query_database("SHOW TABLES", db_name=db)
+            if error:
+                print(f"  {db}: unavailable ({error[:50]}...)", file=sys.stderr)
+                continue
+
+            tables = set()
             for row in rows:
-                table = list(row.values())[0]
-                self._all_tables_cache.add(table.lower())
-        print(f"Cached {len(self._all_tables_cache)} table names from database", file=sys.stderr)
+                table = list(row.values())[0].lower()
+                tables.add(table)
+                self._all_tables_cache.add(table)
+                self._db_tables_cache[db] = tables
+
+                if table not in self._table_to_db_cache:
+                    self._table_to_db_cache[table] = []
+                self._table_to_db_cache[table].append(db)
+
+            total_tables += len(tables)
+            print(f"  {db}: {len(tables)} tables", file=sys.stderr)
+
+        for table, dbs in self._table_to_db_cache.items():
+            if len(dbs) > 1:
+                self._table_to_db_cache[table] = sorted(dbs, key=lambda x: self._db_priority_order.index(x) if x in self._db_priority_order else 999)
+
+        print(f"Discovered {total_tables} tables across {len(self._db_tables_cache)} databases", file=sys.stderr)
+
+    def _resolve_table_database(self, table_name: str, current_db: str = None) -> Optional[str]:
+        """Resolve table name to correct database using cache and priority order."""
+        table_lower = table_name.lower()
+
+        if table_lower in self._table_to_db_cache:
+            candidates = self._table_to_db_cache[table_lower]
+            if current_db and current_db in candidates:
+                return current_db
+
+            for db in self._db_priority_order:
+                if db in candidates:
+                    return db
+            return candidates[0] if candidates else None
+
+        if current_db and self._db_tables_cache.get(current_db, set()) and table_lower in self._db_tables_cache[current_db]:
+            return current_db
+
+        return None
+
+    def _suggest_similar_tables(self, table_name: str) -> List[str]:
+        """Suggest similar table names using prefix/suffix/substring matching."""
+        table_lower = table_name.lower()
+        suggestions = set()
+
+        exact_matches = difflib.get_close_matches(table_lower, self._all_tables_cache, n=5, cutoff=0.6)
+        for t in exact_matches:
+            suggestions.add(t)
+
+        words = table_lower.replace('_', ' ').split()
+        for word in words:
+            if len(word) >= 3:
+                prefix_matches = [t for t in self._all_tables_cache if t.startswith(word)]
+                suffix_matches = [t for t in self._all_tables_cache if t.endswith(word)]
+                substr_matches = [t for t in self._all_tables_cache if word in t.replace('_', ' ')]
+                suggestions.update(prefix_matches[:5])
+                suggestions.update(suffix_matches[:5])
+                suggestions.update(substr_matches[:5])
+
+        if len(suggestions) == 0:
+            words = table_lower.split('_')
+            for i, w1 in enumerate(words):
+                for w2 in words[i+1:]:
+                    combined = w1 + w2
+                    if len(combined) >= 4:
+                        close_matches = [t for t in self._all_tables_cache if combined in t.replace('_', ' ') or t.startswith(w1)]
+                        suggestions.update(close_matches[:3])
+
+        sorted_suggestions = sorted(suggestions, key=lambda x: difflib.SequenceMatcher(None, table_lower, x).ratio(), reverse=True)
+
+        return list(sorted(set(sorted_suggestions[:5])))
 
     def _load_registry(self) -> Dict[str, Any]:
         registry_file = Path(__file__).parent / "datastore_registry.json"
@@ -180,13 +274,25 @@ class DBCQueryMCP:
         if not format_string:
             raise ValueError(f"No format found for DBC: {dbc_name}")
 
+        # Try exact path first, then case-insensitive search
         dbc_file = self.dbc_path / f"{dbc_name}.dbc"
+        if not dbc_file.exists():
+            # Case-insensitive search for matching .dbc file
+            dbc_name_lower = dbc_name.lower()
+            for f in self.dbc_path.glob("*.dbc"):
+                if f.stem.lower() == dbc_name_lower:
+                    dbc_file = f
+                    break
+
+        if not dbc_file.exists():
+            raise FileNotFoundError(f"DBC file not found: {self.dbc_path / dbc_name}.dbc")
+
         reader = WDBCReader(str(dbc_file), format_string)
         reader.read()
         self.dbc_cache[dbc_name] = reader
         return reader
 
-    def _query_database(self, sql: str, db_name: Optional[str] = None) -> Tuple[Optional[List[Dict]], Optional[str]]:
+    def _query_database(self, sql: str, db_name: Union[str, None] = None) -> Tuple[Optional[List[Dict]], Optional[str]]:
         db = db_name or self.db_name
         try:
             cmd = [
@@ -667,6 +773,11 @@ class DBCQueryMCP:
                 "isError": True
             }
 
+        # Smart routing: resolve table to correct database
+        target_db = self._resolve_table_database(sql_table, self.db_name)
+        if target_db:
+            print(f"Routing query_game_data to {target_db} for table '{sql_table}'", file=sys.stderr)
+
         sql = f"SELECT * FROM {sql_table}"
 
         where_clauses = []
@@ -685,7 +796,7 @@ class DBCQueryMCP:
             sql += " WHERE " + " AND ".join(where_clauses)
         sql += f" LIMIT {args.get('limit', 100)}"
 
-        rows, db_error = self._query_database(sql)
+        rows, db_error = self._query_database(sql, db_name=target_db)
         if db_error:
             error_msg = f"Database error: {db_error}"
             col_match = re.search(r"Unknown column '([^']+)' in '([^']*)'", db_error)
@@ -890,6 +1001,20 @@ class DBCQueryMCP:
 
         return result
 
+    def _extract_tables_from_sql(self, sql: str) -> List[str]:
+        """Extract table names from SQL query."""
+        tables = []
+        
+        from_matches = re.finditer(r'\bFROM\s+`?(\w+)`?', sql, re.IGNORECASE)
+        for match in from_matches:
+            tables.append(match.group(1))
+        
+        join_matches = re.finditer(r'\bJOIN\s+`?(\w+)`?', sql, re.IGNORECASE)
+        for match in join_matches:
+            tables.append(match.group(1))
+        
+        return tables
+
     def _execute_sql(self, args: Dict[str, Any]) -> Dict[str, Any]:
         sql = args.get("sql", "").strip()
         if not sql:
@@ -907,12 +1032,72 @@ class DBCQueryMCP:
             if sql_upper.startswith(forbidden):
                 return {"error": f"Forbidden statement type: {forbidden.strip()}", "isError": True}
 
-        rows, error = self._query_database(sql)
+        # Smart routing: extract tables and determine correct database
+        tables = self._extract_tables_from_sql(sql)
+        target_db = self.db_name
+        
+        if tables:
+            primary_table = tables[0]
+            resolved_db = self._resolve_table_database(primary_table, self.db_name)
+            if resolved_db:
+                target_db = resolved_db
+                print(f"Routing query to {target_db} for table '{primary_table}'", file=sys.stderr)
+
+        rows, error = self._query_database(sql, db_name=target_db)
+        
         if error:
-            msg = f"Database query failed: {error}"
-            if "Access denied" in error or "connect" in error.lower() or "Can't connect" in error:
-                msg += " Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD environment variables."
+            # Check for wrong database error and try all databases
+            if "Unknown table" in error or "doesn't exist" in error:
+                for db in self._db_priority_order:
+                    if db == target_db:
+                        continue
+                    rows, error = self._query_database(sql, db_name=db)
+                    if not error and rows is not None:
+                        print(f"Retried successfully in {db}", file=sys.stderr)
+                        # Update cache with correct database for this table
+                        for table in tables:
+                            if table.lower() in self._table_to_db_cache:
+                                dbs = self._table_to_db_cache[table.lower()]
+                                if db not in dbs:
+                                    dbs.insert(0, db)
+                            else:
+                                self._table_to_db_cache[table.lower()] = [db]
+                        
+                        # Hint for empty results on loot template searches
+                        if not rows:
+                            table_match = re.search(r'FROM\s+`?(\w+)`?', sql, re.IGNORECASE)
+                            if table_match:
+                                tbl = table_match.group(1)
+                                if 'loot_template' in tbl.lower() and re.search(r'\bITEM\s*=|ITEM\s+=\s*\d+', sql, re.IGNORECASE):
+                                    msg = "No results. For quest items, try gameobject_questitem or creature_questitem tables instead of loot_template tables.\n"
+                                    msg += f"Example: SELECT * FROM gameobject_questitem WHERE ItemId = <item_id>\n"
+                                    msg += "Use lookup_datastore(query='gameobject_questitem') to see schema."
+                                    return {"result": [], "count": 0, "hint": msg}
+                        return {"result": rows or [], "count": len(rows or [])}
+                
+                # Build error message with suggestions
+                msg = f"Database query failed: {error}"
+                table_match = re.search(r"Table '(\w+)\.(\w+)' doesn't exist", error)
+                if not table_match:
+                    table_match = re.search(r"Unknown table '([^']+)'", error)
+                if table_match:
+                    bad_table = table_match.group(2) if table_match.lastindex >= 2 else table_match.group(1)
+                    
+                    # Try all databases for suggestions
+                    suggestions = self._suggest_similar_tables(bad_table)
+                    if suggestions:
+                        suggestion_info = []
+                        for s in suggestions[:5]:
+                            db_list = self._table_to_db_cache.get(s, [])
+                            db_str = ", ".join(db_list) if db_list else "unknown"
+                            suggestion_info.append(f"{s} ({db_str})")
+                        msg += f"\n\nDid you mean: {', '.join(suggestion_info)}?"
+                    
+                    msg += f"\n\nUse lookup_datastore(query='{bad_table}') to verify the table name and get column schema."
+                    msg += f"\nNote: Searched databases: {', '.join(self._db_priority_order)}"
+            
             elif "Unknown column" in error:
+                msg = f"Database query failed: {error}"
                 col_match = re.search(r"Unknown column '([^']+)' in '([^']*)'", error)
                 if not col_match:
                     col_match = re.search(r"Unknown column '([^']+)'", error)
@@ -925,42 +1110,22 @@ class DBCQueryMCP:
                         if suggestion:
                             msg += f"\n{suggestion}"
                         msg += f"\nUse lookup_datastore(query='{table_hint}') for full schema."
-            elif "Unknown table" in error or "doesn't exist" in error:
-                table_match = re.search(r"Table '(\w+)\.(\w+)' doesn't exist", error)
-                if not table_match:
-                    table_match = re.search(r"Unknown table '([^']+)'", error)
-                if table_match:
-                    bad_table = table_match.group(2) if table_match.lastindex >= 2 else table_match.group(1)
-                    # First search registry
-                    known_tables = set()
-                    for e in self.registry.get("entries", {}).values():
-                        t = e.get("sql_table", "")
-                        if t:
-                            known_tables.add(t.lower())
-                    close = [t for t in known_tables if bad_table.lower() in t or t in bad_table.lower()]
-                    # Then search all tables in database with smarter matching
-                    db_close = []
-                    bad_parts = set(bad_table.lower().replace('_', ' ').split())
-                    for t in self._all_tables_cache:
-                        t_parts = set(t.replace('_', ' ').split())
-                        # Check if there's significant overlap (at least 2 words match)
-                        overlap = bad_parts & t_parts
-                        if len(overlap) >= 2 or bad_table.lower() in t or t in bad_table.lower():
-                            db_close.append(t)
-                    # Combine and deduplicate
-                    all_close = sorted(set(close + db_close))[:5]
-                    if all_close:
-                        msg += f"\nDid you mean: {', '.join(all_close)}?"
-                    msg += f"\nUse lookup_datastore(query='{bad_table}') to verify the table name and get column schema."
+            
+            elif "Access denied" in error or "connect" in error.lower() or "Can't connect" in error:
+                msg = f"Database query failed: {error}"
+                msg += " Check DB_HOST, DB_PORT, DB_USER, DB_PASSWORD environment variables."
+            
+            else:
+                msg = f"Database query failed: {error}"
+            
             return {"error": msg, "isError": True}
 
         # Hint for empty results on loot template searches
         if not rows:
-            sql_upper = sql.upper()
             table_match = re.search(r'FROM\s+`?(\w+)`?', sql, re.IGNORECASE)
             if table_match:
-                table = table_match.group(1)
-                if 'loot_template' in table.lower() and re.search(r'\bITEM\s*=|ITEM\s+=\s*\d+', sql, re.IGNORECASE):
+                tbl = table_match.group(1)
+                if 'loot_template' in tbl.lower() and re.search(r'\bITEM\s*=|ITEM\s+=\s*\d+', sql, re.IGNORECASE):
                     msg = "No results. For quest items, try gameobject_questitem or creature_questitem tables instead of loot_template tables.\n"
                     msg += f"Example: SELECT * FROM gameobject_questitem WHERE ItemId = <item_id>\n"
                     msg += "Use lookup_datastore(query='gameobject_questitem') to see schema."

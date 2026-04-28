@@ -128,6 +128,17 @@ class FormatParser:
         if fmt_name in self.formats:
             return self.formats[fmt_name]
 
+        # Case-insensitive fallback: search all formats for case-insensitive match
+        dbc_name_lower = dbc_name.lower()
+        for fmt_key in self.formats:
+            if fmt_key.lower() == dbc_name_lower:
+                return self.formats[fmt_key]
+            # Also check without "Entry" suffix
+            if fmt_key.lower() == dbc_name_lower + "entry":
+                return self.formats[fmt_key]
+            if fmt_key.lower().replace("entry", "") == dbc_name_lower:
+                return self.formats[fmt_key]
+
         return None
 
     def list_available(self) -> list[str]:

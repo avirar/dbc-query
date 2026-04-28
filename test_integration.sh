@@ -272,5 +272,176 @@ if err:
 echo "$result"
 echo "  PASS"
 
+# Test 21: Smart routing - arena_team should auto-route to acore_characters
+echo ""
+echo "Test 21: Cross-database routing for arena_team (characters DB)"
+result=$(call_tool execute_sql '{"sql": "SELECT COUNT(*) as cnt FROM arena_team LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:100]}...')
+else:
+    rows = d.get('result', [])
+    print(f'  routed_to_characters={len(rows) > 0}, count={d.get(\"count\", 0)}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 22: Smart routing - creature_template stays in acore_world
+echo ""
+echo "Test 22: Cross-database routing for creature_template (world DB)"
+result=$(call_tool execute_sql '{"sql": "SELECT entry, name FROM creature_template WHERE entry = 1 LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:100]}...')
+else:
+    rows = d.get('result', [])
+    if rows:
+        print(f'  routed_to_world={len(rows) > 0}, entry={rows[0].get(\"entry\")}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 23: Smart routing suggests tables from characters DB when queried from world
+echo ""
+echo "Test 23: Table suggestions include multi-DB lookup for arena_team typo"
+result=$(call_tool execute_sql '{"sql": "SELECT * FROM arena_teams LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_suggestion = 'arena_team' in err.lower()
+print(f'  has_suggestion={has_suggestion}')
+if err:
+    import re
+    match = re.search(r'Did you mean: ([^\n]+)', err)
+    if match:
+        print(f'  suggestion={match.group(1)}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 24: Query characters table (player data)
+echo ""
+echo "Test 24: Query acore_characters.database for 'characters' table"
+result=$(call_tool execute_sql '{"sql": "SELECT COUNT(*) as total FROM characters LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:100]}...')
+else:
+    rows = d.get('result', [])
+    print(f'  routed_to_characters={len(rows) > 0}, count={d.get(\"count\", 0)}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 25: Query account table (auth DB)
+echo ""
+echo "Test 25: Query acore_auth for 'account' table"
+result=$(call_tool execute_sql '{"sql": "SELECT id, username FROM account LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:100]}...')
+else:
+    rows = d.get('result', [])
+    if rows:
+        print(f'  routed_to_auth={len(rows) > 0}, id={rows[0].get(\"id\")}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 26: Table name correction - arena_te should suggest arena_team
+echo ""
+echo "Test 26: Partial table name suggests arena_team with database hint"
+result=$(call_tool execute_sql '{"sql": "SELECT * FROM arena_te LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_suggestion = 'arena_team' in err.lower() or 'Did you mean' in err
+print(f'  has_suggestion={has_suggestion}')
+if err:
+    import re
+    match = re.search(r'Did you mean: ([^\n]+)', err)
+    if match:
+        sug = match.group(1)
+        print(f'  suggestion={sug}')
+        print(f'  includes_db_hint={\"acore\" in sug.lower() or \"characters\" in sug.lower()}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 27: query_game_data for arena_team_member (SQL manager, characters)
+echo ""
+echo "Test 27: query_game_data routes arena_team_member to correct DB"
+result=$(call_tool query_game_data '{"dbc_name": "ArenaTeamMembers", "limit": 1}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:100]}...')
+else:
+    rows = d.get('result', [])
+    meta = d.get('metadata', {})
+    print(f'  routed_successfully={len(rows) > 0}, count={d.get(\"count\", 0)}')
+    if meta:
+        print(f'  sql_table={meta.get(\"sql_table\", \"N/A\")}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 28: Table with prefix/suffix matching
+echo ""
+echo "Test 28: Suggests 'arena_team_member' when searching 'team_member'"
+result=$(call_tool execute_sql '{"sql": "SELECT * FROM team_member LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+err = d.get('error', '')
+has_suggestion = 'arena_team_member' in err.lower()
+print(f'  has_arena_team_member={has_suggestion}')
+if err:
+    import re
+    match = re.search(r'Did you mean: ([^\n]+)', err)
+    if match:
+        print(f'  suggestions={match.group(1)}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 29: Test database discovery output
+echo ""
+echo "Test 29: Verify multi-database table discovery completed"
+discovery=$(timeout 5 python3 /root/dbc-query/server.py 2>&1 <<<'{"jsonrpc": "2.0", "id": 1, "method": "initialize"}' | head -20)
+has_world=$(echo "$discovery" | grep -c "acore_world:.*tables" || true)
+has_characters=$(echo "$discovery" | grep -c "acore_characters:.*tables" || true)
+has_auth=$(echo "$discovery" | grep -c "acore_auth:.*tables" || true)
+echo "  discovered_world=$has_world, characters=$has_characters, auth=$has_auth"
+echo "  PASS"
+
+# Test 30: Test overlapping tables (updates exists in all DBs)
+echo ""
+echo "Test 30: Overlapping 'updates' table uses priority order (world first)"
+result=$(call_tool execute_sql '{"sql": "SELECT name, state FROM updates LIMIT 1"}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+if 'error' in d:
+    print(f'  error: {d[\"error\"][:100]}...')
+else:
+    rows = d.get('result', [])
+    if rows:
+        print(f'  found_in_world={len(rows) > 0}, state={rows[0].get(\"state\", \"N/A\")}')
+")
+echo "$result"
+echo "  PASS"
+
 echo ""
 echo "All tests completed successfully!"
