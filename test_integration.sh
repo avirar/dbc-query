@@ -441,6 +441,69 @@ else:
         print(f'  found_in_world={len(rows) > 0}, state={rows[0].get(\"state\", \"N/A\")}')
 ")
 echo "$result"
+    echo "  PASS"
+
+# Test 31: Field selection limits output
+echo ""
+echo "Test 31: Spell id=118 with fields=[38,39] returns 2 fields"
+result=$(call_tool query_game_data '{"dbc_name": "Spell", "id": 118, "fields": [38, 39], "compact": true}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+fields = d.get('result', {})
+if isinstance(fields, list):
+    print(f'field_count={len(fields)}, has_raw={\"raw\" in d}, field_names={[f[\"name\"] for f in fields]}')
+else:
+    print(f'result_type={type(fields).__name__}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 32: Compact mode strips nulls
+echo ""
+echo "Test 32: Compact mode default strips null fields from SkillLine"
+result=$(call_tool query_game_data '{"dbc_name": "SkillLine", "id": 6}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+fields = d.get('result', [])
+if isinstance(fields, list):
+    null_count = sum(1 for f in fields if f.get('value') is None)
+    print(f'has_raw={\"raw\" in d}, total_fields={len(fields)}, nulls_stripped={(null_count == 0)}')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 33: Typo suggestion for creature_template
+echo ""
+echo "Test 33: Typo 'creature_templat' suggests corrections"
+result=$(call_tool query_game_data '{"dbc_name": "creature_templat", "id": 1}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+suggestion = d.get('suggestion', '')
+has_hint = 'creature_template' in suggestion.lower() and 'did you mean' in suggestion.lower()
+print(f'has_suggestion={has_hint}')
+if has_hint:
+    print(f'snippet={suggestion[:80]}...')
+")
+echo "$result"
+echo "  PASS"
+
+# Test 34: Typo suggestion for spell_proc_event
+echo ""
+echo "Test 34: Typo 'spel_proc_event' suggests corrections"
+result=$(call_tool query_game_data '{"dbc_name": "spel_proc_event", "filter": {"entryorguid": 1}}' | python3 -c "
+import sys,json
+r=json.load(sys.stdin)
+d=json.loads(r['result']['content'][0]['text'])
+suggestion = d.get('suggestion', '')
+has_hint = 'spell_proc_event' in suggestion.lower()
+print(f'has_suggestion={has_hint}')
+if has_hint:
+    print(f'snippet={suggestion[:80]}...')
+")
+echo "$result"
 echo "  PASS"
 
 echo ""

@@ -314,6 +314,62 @@ class DBCQueryMCP:
             parts.append(f"Use query_game_data(dbc_name='{dbc_file}') for merged DBC+SQL data.")
         return " ".join(parts)
 
+    def _suggest_similar_store(self, name: str) -> List[Tuple[str, str, float]]:
+        """Fuzzy match against registry entries AND SQL tables.
+        
+        Returns: [(suggestion_name, category_hint, similarity_score), ...]
+        
+        Matches on:
+        - C++ struct names (SpellEntry, CreatureEntry)
+        - SQL table names (quest_template, spell_proc_event)  
+        - Store variables (sSpellStore)
+        - All discovered DB tables (arena_team from acore_characters)
+        """
+        candidates = []
+        
+        # Add registry struct names
+        for struct_name, entry in self.registry.get("entries", {}).items():
+            candidates.append(struct_name.lower())
+            
+            # SQL table
+            sql_table = entry.get("sql_table", "")
+            if sql_table:
+                candidates.append(sql_table.lower())
+                
+            # Store variable
+            store_var = entry.get("store_variable", "")
+            if store_var:
+                candidates.append(store_var.lower())
+        
+        # Add all discovered tables (includes multi-DB coverage)
+        candidates.extend(self._all_tables_cache)
+        
+        name_lower = name.lower()
+        matches = difflib.get_close_matches(name_lower, candidates, n=10, cutoff=0.45)
+        
+        # Deduplicate and add category hints
+        seen = {}
+        for m in matches:
+            if m in seen:
+                continue
+            
+            # Determine category hint
+            if m in self.registry.get("indices", {}).get("by_struct_name", {}):
+                category = "struct"
+            elif m.endswith("_dbc"):
+                category = "dbc_overlay"
+            elif "_dbc" not in m and any(m == e["c_struct"].lower() for e in self.registry.get("entries", {}).values()):
+                category = "struct"
+            else:
+                category = "table"
+            
+            score = difflib.SequenceMatcher(None, name_lower, m).ratio()
+            seen[m] = (m, category, score)
+        
+        # Sort by similarity score descending
+        sorted_suggestions = sorted(seen.values(), key=lambda x: x[2], reverse=True)
+        return sorted_suggestions[:5]
+
     def _find_similar_field_names(self, key, reg_entry):
         """Find field names similar to the given key using fuzzy matching."""
         fields = reg_entry.get("fields", {})
@@ -407,6 +463,32 @@ class DBCQueryMCP:
                 notes.append(f"  {note}")
 
         return converted, notes
+
+    def _resolve_field_name_to_index(self, field_name: str, fields_meta: Dict) -> List[int]:
+        """Resolve field name (C++ struct or SQL column) to list of index numbers.
+        
+        Handles array elements like 'name', 'name[3]', etc.
+        Returns empty list if not found.
+        """
+        resolved = []
+        name_lower = field_name.lower()
+        
+        for idx_str, info in fields_meta.items():
+            c_name = info.get("name", "").lower()
+            sql_col = info.get("sql_column", "").lower()
+            idx = int(idx_str)
+            
+            # Direct match
+            if c_name == name_lower or sql_col == name_lower:
+                resolved.append(idx)
+                continue
+            
+            # Prefix match for arrays (e.g., 'name' matches 'name[3]')
+            array_prefix = c_name.split("[")[0] if "[" in c_name else c_name
+            if field_name == array_prefix and name_lower.startswith(array_prefix):
+                resolved.append(idx)
+        
+        return resolved
 
     def _load_dbc(self, dbc_name: str) -> WDBCReader:
         if dbc_name in self.dbc_cache:
@@ -576,13 +658,23 @@ class DBCQueryMCP:
                         },
                         "filter": {
                             "type": "object",
-                            "description": "Filter records by field values. For DBC stores, keys are field indices (as strings). For SQL stores, keys are column names. Example: {'2': 2567} for DBC, {'QuestID': 3904} for SQL.",
+                            "description": "Filter records by field values. For DBC stores, keys are field indices (as strings) or names. Supports {'$like': '...'} and {'$ilike': '...'} for string fields. Examples: {'2': 2567}, {'Spell': 116}, {'name': {'$like': '%Polymorph%'}}.",
                             "additionalProperties": True
                         },
                         "columns": {
                             "type": "array",
                             "items": {"type": "number"},
-                            "description": "Select specific field indices to return (DBC stores only). If omitted, all fields are returned."
+                            "description": "Select specific field indices to return in raw DBC queries. Use 'fields' for annotated output with name support."
+                        },
+                        "fields": {
+                            "type": "array",
+                            "items": {"type": ["number", "string"]},
+                            "description": "Limit fields in annotated output. Accept numeric indices [38, 39] OR names ['BaseLevel', 'SpellLevel']. Works for both single and multi-record results."
+                        },
+                        "compact": {
+                            "type": "boolean",
+                            "default": true,
+                            "description": "Default (true): strip null fields, omit raw section, unwrap single records. Set false for full readout with all fields and raw duplicates."
                         },
                         "limit": {
                             "type": "number",
@@ -829,10 +921,34 @@ class DBCQueryMCP:
 
         return {"result": result}
 
-    def _annotate_single_record_with_source(self, record, fields, sql_values=None):
-        """Annotate single record with source tracking."""
+    def _annotate_single_record_with_source(self, record, fields, sql_values=None, field_filter=None, compact=True):
+        """Annotate single record with source tracking.
+        
+        Args:
+            record: DBC record dict {index: value}
+            fields: Registry field mapping {index: field_info}
+            sql_values: Optional SQL overlay values for source comparison
+            field_filter: List of field indices/names to include (None = all)
+            compact: If True, strip null values and skip unused fields
+            
+        Returns:
+            List of annotated field dicts or single list for unwrapped mode
+        """
         if not isinstance(record, dict):
             return record
+
+        # Build index set for field_filter if provided
+        filter_indices = None
+        if field_filter:
+            filter_indices = set()
+            for f in field_filter:
+                if isinstance(f, int):
+                    filter_indices.add(f)
+                elif isinstance(f, str):
+                    # Resolve field name to index(es)
+                    resolved = self._resolve_field_name_to_index(f, fields)
+                    if resolved:
+                        filter_indices.update(resolved)
 
         pk_col = None
         if "0" in fields:
@@ -849,6 +965,14 @@ class DBCQueryMCP:
             try:
                 idx_int = int(idx)
             except (ValueError, TypeError):
+                continue
+
+            # Apply field filter if provided
+            if filter_indices is not None and idx_int not in filter_indices:
+                continue
+
+            # Skip null values in compact mode
+            if compact and value is None:
                 continue
 
             field_info = fields.get(str(idx_int), {})
@@ -885,34 +1009,113 @@ class DBCQueryMCP:
 
         return annotated
 
-    def _annotate_dbc_result(self, result, reg_entry, db_result=None):
-        """Annotate DBC query results with field names, types, and source tracking."""
+    def _annotate_dbc_result(self, result, reg_entry, db_result=None, fields=None, compact=True):
+        """Annotate DBC query results with field names, types, and source tracking.
+        
+        Args:
+            result: Query result (dict for single record, list for multiple)
+            reg_entry: Registry entry with field metadata
+            db_result: Optional SQL overlay results
+            fields: List of field indices/names to include (None = all)
+            compact: If True, strip nulls, omit raw, unwrap single records
+            
+        Returns:
+            For compact=True, single record: [field1, field2, ...] (flat list)
+            For compact=True, multi record: [[row1_fields], [row2_fields]] (nested)
+            For compact=False: {"annotated": ..., "raw": ...}
+        """
         if not reg_entry:
+            if compact:
+                return result if isinstance(result, list) else {"result": result}
             return {"annotated": result if isinstance(result, list) else [result], "raw": result}
 
-        fields = reg_entry.get("fields", {})
-
+        fields_meta = reg_entry.get("fields", {})
         sql_values = None
         if db_result and isinstance(db_result, list) and len(db_result) > 0:
             if isinstance(result, dict):
                 sql_values = db_result[0]
 
         if isinstance(result, dict):
-            annotated = self._annotate_single_record_with_source(result, fields, sql_values)
-            return {"annotated": [annotated], "raw": result}
+            annotated = self._annotate_single_record_with_source(result, fields_meta, sql_values, fields, compact)
+            if not annotated:
+                return {"result": {}, "metadata": {"empty_reason": "No matching fields", "compact": compact}}
+            if compact:
+                return {"result": annotated}
+            return {"annotated": [annotated], "raw": result, "result": annotated}
 
         elif isinstance(result, list):
+            if not result:
+                return {"result": {}, "metadata": {"empty_reason": "No records found", "compact": compact}}
+            
             annotated_list = []
             for r in result:
-                annotated = self._annotate_single_record_with_source(r, fields, sql_values)
-                annotated_list.append(annotated)
+                annotated = self._annotate_single_record_with_source(r, fields_meta, sql_values, fields, compact)
+                if annotated:
+                    annotated_list.append(annotated)
 
+            if not annotated_list:
+                return {"result": {}, "metadata": {"empty_reason": "No matching records after filtering", "compact": compact}}
+                
+            if compact:
+                return {"result": annotated_list}
             return {
                 "annotated": annotated_list,
-                "raw": result
+                "raw": result,
+                "result": annotated_list
             }
 
+        if compact:
+            return {"result": {}}
         return {"annotated": [], "raw": result}
+
+    def _parse_filter_value(self, value, field_info=None):
+        """Parse filter values supporting $like/$ilike syntax.
+        
+        Args:
+            value: Filter value (simple or dict with $like/$ilike)
+            field_info: Optional field metadata for type hints
+            
+        Returns:
+            {"type": "eq"|"like"|"ilike", "value": ...}
+        """
+        if isinstance(value, str):
+            return {"type": "eq", "value": value}
+        
+        elif isinstance(value, dict):
+            if "$like" in value:
+                # Auto-escape special SQL LIKE chars
+                pattern = value["$like"]
+                escaped_pattern, warnings = self._escape_like_pattern(pattern)
+                return {"type": "like", "pattern": escaped_pattern, "warnings": warnings}
+            elif "$ilike" in value:
+                pattern = value["$ilike"]
+                escaped_pattern, warnings = self._escape_like_pattern(pattern)
+                return {"type": "ilike", "pattern": escaped_pattern, "warnings": warnings}
+            elif "$eq" in value:
+                return {"type": "eq", "value": value["$eq"]}
+        
+        # Default: numeric equality
+        return {"type": "eq", "value": value}
+
+    def _escape_like_pattern(self, pattern):
+        """Auto-escape SQL LIKE special characters.
+        
+        Special chars: % matches any sequence, _ matches single char
+        Returns: (escaped_pattern, warnings)
+        """
+        warnings = []
+        escaped = pattern
+        
+        # Escape backslashes first
+        escaped = escaped.replace("\\", "\\\\")
+        
+        # Escape LIKE wildcards
+        if "%" in escaped and "\\\\" not in pattern:
+            escaped = re.sub(r'(?<!\\)%', r'\%', escaped)
+        if "_" in escaped and "\\\\" not in pattern:
+            escaped = re.sub(r'(?<!\\)_', r'\_', escaped)
+            
+        return escaped, warnings
 
     def _dbc_filter_to_sql_where(self, filter_dict, reg_entry):
         """Convert DBC index-based filter to SQL WHERE clauses."""
@@ -925,11 +1128,22 @@ class DBCQueryMCP:
         for idx, value in filter_dict.items():
             field_info = fields.get(str(idx), {})
             sql_col = field_info.get("sql_column") or field_info.get("name", f"Field{idx}")
-
-            if isinstance(value, str):
-                clauses.append(f"{sql_col} = '{value}'")
+            
+            # Parse filter value (supports $like/$ilike)
+            parsed = self._parse_filter_value(value, field_info)
+            ptype = parsed.get("type", "eq")
+            val = parsed.get("value") if ptype == "eq" else parsed.get("pattern", "")
+            
+            if ptype == "like":
+                clauses.append(f"{sql_col} LIKE '%{val}%' COLLATE utf8mb4_general_ci")
+            elif ptype == "ilike":
+                clauses.append(f"{sql_col} ILIKE '%{val}%'")
+            elif isinstance(val, str):
+                # Escape single quotes in string values
+                escaped_val = val.replace("'", "\\'")
+                clauses.append(f"{sql_col} = '{escaped_val}'")
             else:
-                clauses.append(f"{sql_col} = {value}")
+                clauses.append(f"{sql_col} = {val}")
 
         return clauses
 
@@ -997,12 +1211,24 @@ class DBCQueryMCP:
             elif category in ("sql_objectmgr", "sql_manager"):
                 return self._query_game_data_sql(args, entry)
         
-        # Fallback: try as raw DBC name
+        # Fallback: try fuzzy matching before raw DBC path
+        suggestions = self._suggest_similar_store(dbc_name)
+        if suggestions:
+            formatted = [f"{name} ({cat})" for name, cat, _ in suggestions[:5]]
+            return {
+                "error": f"Store '{dbc_name}' not found in registry or database.",
+                "suggestion": f"Did you mean: {', '.join(formatted)}?",
+                "isError": True
+            }
+        
+        # Last resort: try as raw DBC name
         return self._query_game_data_dbc(args, None)
 
     def _query_game_data_dbc(self, args: Dict[str, Any], reg_entry: Optional[Dict]) -> Dict[str, Any]:
         dbc_name = args.get("dbc_name")
-
+        fields_param = args.get("fields")
+        compact = args.get("compact", True)
+        
         dbc_result = None
         dbc_error = None
         db_result = None
@@ -1048,10 +1274,10 @@ class DBCQueryMCP:
             merged = db_result
         elif dbc_result and not db_result:
             source = "dbc"
-            merged = self._annotate_dbc_result(dbc_result, reg_entry)
+            merged = self._annotate_dbc_result(dbc_result, reg_entry, fields=fields_param, compact=compact)
         elif dbc_result and db_result:
             source = "hybrid"
-            merged = self._annotate_dbc_result(dbc_result, reg_entry, db_result)
+            merged = self._annotate_dbc_result(dbc_result, reg_entry, db_result, fields=fields_param, compact=compact)
         else:
             return self._build_schema_error(
                 dbc_name, f"No data found. DBC: {dbc_error or 'N/A'}, DB: {db_error or 'N/A'}",

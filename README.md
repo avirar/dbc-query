@@ -36,6 +36,40 @@ mcp__dbc_query__query_game_data(dbc_name="creature_template", id=1)
 
 # SQL Manager store
 mcp__dbc_query__query_game_data(dbc_name="smart_scripts", filter={"entryorguid": 1000})
+
+# Field selection - limit to specific fields
+mcp__dbc_query__query_game_data(
+    dbc_name="Spell", 
+    id=118,
+    fields=[38, 39]  # BaseLevel, SpellLevel
+)
+
+# Field selection with names (v2.0+)
+mcp__dbc_query__query_game_data(
+    dbc_name="Spell",
+    id=118,
+    fields=["BaseLevel", "SpellLevel"]
+)
+
+# Compact mode strips nulls (default) - v2.0+
+mcp__dbc_query__query_game_data(
+    dbc_name="SkillLine", 
+    id=6,
+    compact=True  # default: strips nulls, omits raw section
+)
+
+# String filters with LIKE - v2.0+
+mcp__dbc_query__query_game_data(
+    dbc_name="Item",
+    filter={"Name": {"$like": "%Sword%"}},  # SQL LIKE
+    limit=5
+)
+
+mcp__dbc_query__query_game_data(
+    dbc_name="Item",
+    filter={"Name": {"$ilike": "%sword%"}},  # case-insensitive
+    limit=5
+)
 ```
 
 ### 3. `describe_fields` — Get field metadata with SQL/struct cross-references
@@ -78,6 +112,76 @@ mcp__dbc_query__list_stores(search="spell")            # Search across all store
 ```python
 mcp__dbc_query__list_dbcs(search="Spell")
 ```
+
+## v2.0 Improvements
+
+### Field Selection
+
+Limit output by requesting specific fields using indices or names:
+
+```python
+# Numeric indices
+fields=[38, 39, 54]  # BaseLevel, SpellLevel, Reagent[0]
+
+# Field names (C++ struct or SQL column)
+fields=["BaseLevel", "SpellLevel"]
+
+# Mixed
+fields=[38, "SpellLevel", 54]
+```
+
+This dramatically reduces response size. For example, `Spell id=118` with `fields=[38, 39]` returns ~20 lines instead of ~2000.
+
+### Compact Mode (Default)
+
+By default (`compact=True`), responses are optimized:
+- ✅ Null/empty fields stripped (no `FieldNNN: None`)
+- ✅ Redundant `raw` section omitted
+- ✅ Single ID lookups return flat arrays (`[field1, field2...]`)
+- ✅ Multi-record results remain nested (`[[row1], [row2]]`)
+
+For debugging, set `compact=False` to get full readout with all fields and raw duplicates.
+
+### Empty Results
+
+When no data is found:
+- Returns `{}` instead of `[]`
+- Includes `metadata.empty_reason` explaining why
+- Provides `suggestion` if typo detected
+
+### Typo Recovery
+
+Store name typos suggest corrections from:
+- Registry C++ struct names (e.g., `SpellEntry`)
+- SQL table names (e.g., `spell_proc_event`)
+- All discovered database tables
+
+```python
+query_game_data("creature_templat")  
+# → "Did you mean: creature_template (struct), quest_template (table)?"
+
+query_game_data("spel_proc_event")  
+# → "Did you mean: spell_proc_event (table)?"
+```
+
+### String Filters & LIKE Queries
+
+Search string fields using SQL patterns:
+
+```python
+# Case-sensitive LIKE
+filter={"Name": {"$like": "%Polymorph%"}}
+
+# Case-insensitive (ILIKE)
+filter={"Name": {"$ilike": "%polymorph%"}}
+
+# Direct equality (for array locale fields)
+filter={"Name[3]": "First Aid"}  # English locale
+```
+
+**Pattern Escaping:** Special SQL chars (`%`, `_`) are auto-escaped with `\`. Warnings appear in metadata if escaping occurred.
+
+**Note:** LIKE queries require a SQL overlay table. If none exists, a helpful error suggests using `execute_sql` directly.
 
 ## Requirements
 
